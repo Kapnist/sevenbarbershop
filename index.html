@@ -11,5 +11,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Chatbot OntaChat (OntaDigital). Les domaines qu'il utilise sont autorisés dans vite.config.ts (CHATBOT_SOURCES). -->
+    <script
+      src="https://www.ontadigital.com/ontachat.js"
+      data-webhook="https://n8n.ontadigital.com/webhook/bcf37e2b-9327-43f8-a700-f3fdcec9c062/chat"
+      data-title="Seven Barbershop"
+      data-subtitle="Une question sur nos salons ou nos prestations ? Je suis là."
+      data-welcome="{salutation} 👋 Je suis l'assistant virtuel de Seven Barbershop. Comment puis-je vous aider ?"
+      data-placeholder="Écrivez votre question…"
+      data-color="#c8a96e"
+      data-header-color="#111b18"
+      data-header-text-color="#f4f0e7"
+      data-user-text-color="#111b18"
+      defer
+    ></script>
   </body>
 </html>

@@ -53,15 +53,22 @@ function seoPages(seo: Seo): Plugin {
   };
 }
 
-// Politique de sécurité du contenu : seuls le site lui-même et FormSubmit (envoi des formulaires) sont autorisés.
+// Chatbot OntaChat (index.html) : son script, la librairie n8n chat qu'il charge, et le serveur qui répond.
+const CHATBOT_SOURCES = {
+  script: "https://www.ontadigital.com https://cdn.jsdelivr.net",
+  style: "https://cdn.jsdelivr.net",
+  connect: "https://n8n.ontadigital.com",
+};
+
+// Politique de sécurité du contenu : le site lui-même, FormSubmit (envoi des formulaires) et le chatbot.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
-  // Les styles en ligne servent au cadrage des photos (object-position).
-  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' ${CHATBOT_SOURCES.script}`,
+  // Les styles en ligne servent au cadrage des photos (object-position) et aux couleurs du chatbot.
+  `style-src 'self' 'unsafe-inline' ${CHATBOT_SOURCES.style}`,
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://formsubmit.co",
+  `connect-src 'self' https://formsubmit.co ${CHATBOT_SOURCES.connect}`,
   "form-action 'self' https://formsubmit.co",
   "frame-src 'none'",
   "object-src 'none'",
