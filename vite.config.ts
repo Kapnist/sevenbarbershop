@@ -188,9 +188,25 @@ export default defineConfig(async ({ mode }) => {
     (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL = siteUrl;
   }
   const seo: Seo = await import("./src/data/seo");
+  // « as string » : ce module dépend des dictionnaires (JSX/DOM), que tsconfig.node ne vérifie pas.
+  const { renderChatbotInfo }: { renderChatbotInfo: (siteUrl: string, updated: string) => string } =
+    await import("./src/data/chatbotInfo" as string);
+
+  // Fiche texte lue par le chatbot : les pages HTML de l'application sont vides pour un robot.
+  const chatbotInfo: Plugin = {
+    name: "seven-chatbot-info",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "assistant.md",
+        source: renderChatbotInfo(seo.SITE_URL, new Date().toISOString().split("T")[0]),
+      });
+    },
+  };
 
   return {
     base: mode === "github" ? "/sevenbarbershop/" : "/",
-    plugins: [react(), securityHeaders(seo), seoPages(seo)],
+    plugins: [react(), securityHeaders(seo), seoPages(seo), chatbotInfo],
   };
 });
