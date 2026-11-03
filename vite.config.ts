@@ -1,31 +1,25 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import {
-  REDIRECT_TO_SITE_URL,
-  SITE_URL,
-  renderHeadTags,
-  renderRobots,
-  renderSitemap,
-  seoRoutes,
-} from "./src/data/seo";
+
+type Seo = typeof import("./src/data/seo");
 
 const SEO_BLOCK = /<!--seo:start-->[\s\S]*?<!--seo:end-->/;
 
-function withSeo(html: string, path: string): string {
+function withSeo(seo: Seo, html: string, path: string): string {
   return html.replace(
     SEO_BLOCK,
-    `<!--seo:start-->\n    ${renderHeadTags(path)}\n    <!--seo:end-->`,
+    `<!--seo:start-->\n    ${seo.renderHeadTags(path)}\n    <!--seo:end-->`,
   );
 }
 
 // Génère une page HTML par route avec ses balises SEO, ainsi que sitemap.xml et robots.txt.
-function seoPages(): Plugin {
+function seoPages(seo: Seo): Plugin {
   return {
     name: "seven-seo-pages",
     enforce: "post",
     transformIndexHtml(html, context) {
       const path = (context.originalUrl ?? "/").split(/[?#]/)[0];
-      return withSeo(html, path.length > 1 ? path.replace(/\/+$/, "") : "/");
+      return withSeo(seo, html, path.length > 1 ? path.replace(/\/+$/, "") : "/");
     },
     generateBundle(_options, bundle) {
       const index = bundle["index.html"];
@@ -34,26 +28,26 @@ function seoPages(): Plugin {
       }
       const template = String(index.source);
 
-      for (const route of seoRoutes) {
+      for (const route of seo.seoRoutes) {
         if (route === "/") {
           continue;
         }
         this.emitFile({
           type: "asset",
           fileName: `${route.slice(1)}.html`,
-          source: withSeo(template, route),
+          source: withSeo(seo, template, route),
         });
       }
 
       this.emitFile({
         type: "asset",
         fileName: "sitemap.xml",
-        source: renderSitemap(new Date().toISOString().split("T")[0]),
+        source: seo.renderSitemap(new Date().toISOString().split("T")[0]),
       });
       this.emitFile({
         type: "asset",
         fileName: "robots.txt",
-        source: renderRobots(),
+        source: seo.renderRobots(),
       });
     },
   };
@@ -95,7 +89,7 @@ function renderNetlifyHeaders(): string {
 }
 
 // Pensé pour l'hébergement mutualisé OVH (Apache).
-function renderHtaccess(): string {
+function renderHtaccess({ SITE_URL, REDIRECT_TO_SITE_URL }: Seo): string {
   const headers = Object.entries(SECURITY_HEADERS)
     .map(([name, value]) => `  Header always set ${name} "${value}"`)
     .join("\n");
@@ -158,7 +152,7 @@ ${hostRedirect}  # Adresses propres : /salons sert salons.html.
 }
 
 // Ajoute la politique de sécurité dans chaque page et les fichiers d'en-têtes des hébergeurs.
-function securityHeaders(): Plugin {
+function securityHeaders(seo: Seo): Plugin {
   return {
     name: "seven-security-headers",
     apply: "build",
@@ -181,13 +175,22 @@ function securityHeaders(): Plugin {
     },
     generateBundle() {
       this.emitFile({ type: "asset", fileName: "_headers", source: renderNetlifyHeaders() });
-      this.emitFile({ type: "asset", fileName: ".htaccess", source: renderHtaccess() });
+      this.emitFile({ type: "asset", fileName: ".htaccess", source: renderHtaccess(seo) });
     },
   };
 }
 
 // « npm run build:github » publie le site dans le sous-dossier /sevenbarbershop/ de GitHub Pages.
-export default defineConfig(({ mode }) => ({
-  base: mode === "github" ? "/sevenbarbershop/" : "/",
-  plugins: [react(), securityHeaders(), seoPages()],
-}));
+// L'adresse du site (VITE_SITE_URL, dans .env.github) est fixée avant de charger les données SEO.
+export default defineConfig(async ({ mode }) => {
+  const siteUrl = loadEnv(mode, ".", "VITE_").VITE_SITE_URL;
+  if (siteUrl) {
+    (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL = siteUrl;
+  }
+  const seo: Seo = await import("./src/data/seo");
+
+  return {
+    base: mode === "github" ? "/sevenbarbershop/" : "/",
+    plugins: [react(), securityHeaders(seo), seoPages(seo)],
+  };
+});

@@ -2,7 +2,19 @@ import { fr } from "../i18n/fr";
 import { salonLocations, type SalonLocation } from "./salons";
 
 // Domaine principal : le .com doit rediriger (301) vers cette adresse.
-export const SITE_URL = "https://www.sevenbarbershop.fr";
+export const OFFICIAL_SITE_URL = "https://www.sevenbarbershop.fr";
+
+/**
+ * Adresse où cette version du site est publiée. vite.config.ts la fixe avant la compilation,
+ * et le navigateur la lit dans VITE_SITE_URL (fichier .env.github pour GitHub Pages).
+ */
+export const SITE_URL: string =
+  (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_SITE_URL ||
+  (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL ||
+  OFFICIAL_SITE_URL;
+
+/** Version de test (GitHub Pages) : ne doit pas concurrencer le vrai site dans Google. */
+const IS_PREVIEW_SITE = SITE_URL !== OFFICIAL_SITE_URL;
 /**
  * À passer à true une fois le domaine définitif branché sur l'hébergement OVH :
  * toute autre adresse (sans www, .com…) redirigera alors vers SITE_URL.
@@ -10,6 +22,16 @@ export const SITE_URL = "https://www.sevenbarbershop.fr";
 export const REDIRECT_TO_SITE_URL = false;
 export const SITE_NAME = "Seven Barbershop";
 const DEFAULT_IMAGE = "/images/salon.png";
+
+/**
+ * Image d'aperçu (WhatsApp, Facebook, Messenger…) : JPEG 1200 × 630 de moins de 300 Ko,
+ * rangé dans public/images/partage/. Les aperçus refusent souvent le WebP et les images lourdes.
+ */
+function shareImage(image: string): string {
+  if (image === DEFAULT_IMAGE) return "/images/partage/salon.jpg";
+  const [, , folder, file] = image.split("/");
+  return `/images/partage/${folder}-${file.replace(/\.[^.]+$/, "")}.jpg`;
+}
 const LOGO = "/images/logo-seven.webp";
 
 interface PageSeo {
@@ -228,7 +250,7 @@ export function getHeadTags(path: string): HeadTags {
   const known = pageSeo[path];
   const seo = known ?? notFoundSeo;
   const salon = salonForPath(path);
-  const image = absoluteUrl(seo.image ?? salon?.image ?? DEFAULT_IMAGE);
+  const image = absoluteUrl(shareImage(seo.image ?? salon?.image ?? DEFAULT_IMAGE));
   const url = absoluteUrl(known ? path : "/");
 
   return {
@@ -239,7 +261,8 @@ export function getHeadTags(path: string): HeadTags {
       {
         key: "name",
         id: "robots",
-        content: known ? "index, follow, max-image-preview:large" : "noindex, follow",
+        content:
+          known && !IS_PREVIEW_SITE ? "index, follow, max-image-preview:large" : "noindex, follow",
       },
       { key: "property", id: "og:type", content: "website" },
       { key: "property", id: "og:locale", content: "fr_FR" },
@@ -248,6 +271,11 @@ export function getHeadTags(path: string): HeadTags {
       { key: "property", id: "og:description", content: seo.description },
       { key: "property", id: "og:url", content: url },
       { key: "property", id: "og:image", content: image },
+      { key: "property", id: "og:image:secure_url", content: image },
+      { key: "property", id: "og:image:type", content: "image/jpeg" },
+      { key: "property", id: "og:image:width", content: "1200" },
+      { key: "property", id: "og:image:height", content: "630" },
+      { key: "property", id: "og:image:alt", content: seo.title },
       { key: "name", id: "twitter:card", content: "summary_large_image" },
       { key: "name", id: "twitter:title", content: seo.title },
       { key: "name", id: "twitter:description", content: seo.description },
