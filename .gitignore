@@ -1,0 +1,15 @@
+# Dépendances et compilation
+node_modules/
+dist/
+
+# Photos d'origine non optimisées (les versions du site sont dans public/images/)
+photo/
+
+# Système et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+.env
+.env.*
