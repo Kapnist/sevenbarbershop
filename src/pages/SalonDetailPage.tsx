@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { SalonPageConfig } from "../data/salonPages";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
+import { asset } from "../asset";
 
 interface SalonText {
   heroAlt: string;
@@ -47,7 +48,7 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
       <section className={`${hero}-hero`}>
         <img
           className={`${hero}-hero-image`}
-          src={config.heroImage}
+          src={asset(config.heroImage)}
           alt={text.heroAlt}
           fetchPriority="high"
         />
@@ -165,7 +166,7 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
                 key={src}
               >
                 <img
-                  src={src}
+                  src={asset(src)}
                   alt={text.photos[index].alt}
                   loading="lazy"
                   decoding="async"

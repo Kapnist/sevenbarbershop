@@ -79,6 +79,14 @@ vite.config.ts       Génération des pages SEO et des en-têtes de sécurité
 
 ## Mise en ligne
 
+### GitHub Pages (version de test)
+
+Le site est publié automatiquement sur https://kapnist.github.io/sevenbarbershop/ à chaque envoi sur la branche `main` (`.github/workflows/deploy.yml`).
+Cette version est compilée avec `npm run build:github`, qui place le site dans le sous-dossier `/sevenbarbershop/`.
+Dans le code, une image de `public/` s'écrit donc `asset("/images/…")` (voir `src/asset.ts`) plutôt qu'avec un chemin brut.
+
+### OVH (domaine sevenbarbershop.fr)
+
 1. Lancer `npm run build`.
 2. Envoyer **le contenu** du dossier `dist/` à la racine de l'hébergement (`www/` chez OVH), sans oublier le fichier caché `.htaccess`.
 

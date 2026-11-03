@@ -173,7 +173,7 @@ function CareersPage() {
               <input
                 type="hidden"
                 name="_next"
-                value={`${window.location.origin}/carrieres?candidature=envoyee`}
+                value={`${window.location.origin}${import.meta.env.BASE_URL}carrieres?candidature=envoyee`}
               />
               {/* Les noms de champs et les valeurs envoyées restent en français pour l'équipe. */}
               <div className="field field-full">

@@ -186,6 +186,8 @@ function securityHeaders(): Plugin {
   };
 }
 
-export default defineConfig({
+// « npm run build:github » publie le site dans le sous-dossier /sevenbarbershop/ de GitHub Pages.
+export default defineConfig(({ mode }) => ({
+  base: mode === "github" ? "/sevenbarbershop/" : "/",
   plugins: [react(), securityHeaders(), seoPages()],
-});
+}));

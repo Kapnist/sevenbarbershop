@@ -1,4 +1,5 @@
 import type { Dictionary } from "../i18n/fr";
+import { asset } from "../asset";
 
 export type PhotoId = keyof Dictionary["photos"];
 
@@ -13,7 +14,7 @@ export interface Photo {
 }
 
 export function photoSrc(photo: Photo, size: "small" | "large" = "small"): string {
-  return `${photo.base}-${size === "small" ? 640 : 1200}.webp`;
+  return `${asset(photo.base)}-${size === "small" ? 640 : 1200}.webp`;
 }
 
 export function photoSrcSet(photo: Photo): string {

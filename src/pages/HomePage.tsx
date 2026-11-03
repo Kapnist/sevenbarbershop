@@ -5,6 +5,7 @@ import { realisations } from "../data/photos";
 import { salonLocations } from "../data/salons";
 import { featuredServices } from "../data/services";
 import { useI18n } from "../i18n";
+import { asset } from "../asset";
 
 const cities = ["Saint-Étienne", "Nice"];
 
@@ -73,7 +74,7 @@ function HomePage() {
       <section className="home-salon">
         <div className="wrap home-salon-grid">
           <img
-            src="/images/meyerbeer/photo-5.webp"
+            src={asset("/images/meyerbeer/photo-5.webp")}
             alt={home.spiritAlt}
             loading="lazy"
             decoding="async"
@@ -128,7 +129,7 @@ function HomePage() {
                     >
                       {location.image && (
                         <img
-                          src={location.image}
+                          src={asset(location.image)}
                           alt={home.cardAlt(location.name, location.city)}
                           loading="lazy"
                           decoding="async"

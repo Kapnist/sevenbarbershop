@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
+import { asset } from "../asset";
 
 const photos = [
   "/images/chavanelle/photo-2.webp",
@@ -27,7 +28,7 @@ function ChavanellePage() {
       <section className="chavanelle-hero">
         <img
           className="chavanelle-hero-image"
-          src="/images/chavanelle/photo-1.webp"
+          src={asset("/images/chavanelle/photo-1.webp")}
           alt={text.heroAlt}
           fetchPriority="high"
         />
@@ -86,7 +87,7 @@ function ChavanellePage() {
             {photos.map((src, index) => (
               <figure className="chavanelle-photo" key={src}>
                 <img
-                  src={src}
+                  src={asset(src)}
                   alt={text.photos[index].alt}
                   loading="lazy"
                   decoding="async"

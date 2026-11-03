@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { languages, useI18n, type Language } from "../i18n";
+import { asset } from "../asset";
 
 const navigation = [
   { to: "/", key: "home", end: true },
@@ -47,7 +48,7 @@ function SiteHeader() {
         <Link className="brand" to="/" aria-label={t.nav.homeLabel}>
           <img
             className="brand-logo"
-            src="/images/logo-seven.webp"
+            src={asset("/images/logo-seven.webp")}
             alt="Seven Barbershop"
           />
         </Link>
