@@ -21,7 +21,7 @@ export const salonLocations: SalonLocation[] = [
     streetAddress: "12 Rue du 11 Novembre",
     postalCode: "42100",
     openingHours: ["Mo-Sa 09:00-19:00"],
-    image: "/images/anatole-france/devanture.png",
+    image: "/images/anatole-france/devanture.webp",
   },
   {
     name: "Jean Jaurès",

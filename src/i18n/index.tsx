@@ -39,8 +39,13 @@ function readStoredLanguage(): Language | null {
   }
 }
 
+/** Robots des moteurs de recherche et des aperçus de liens : ils doivent voir le site en français. */
+const CRAWLER = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|preview|lighthouse/i;
+
 /** Choix mémorisé du visiteur, sinon première langue du navigateur prise en charge. */
 function detectLanguage(): Language {
+  if (typeof navigator !== "undefined" && CRAWLER.test(navigator.userAgent)) return "fr";
+
   const stored = readStoredLanguage();
   if (stored) return stored;
 
@@ -69,15 +74,25 @@ interface I18nValue {
   formatHours: (openingHours: string[]) => { open: string[]; closed: string };
 }
 
-/** Un prix fixe, une fourchette, un prix « dès », ou « sur devis ». */
-export type Price = number | [number, number] | { from: number } | "quote";
+import type { Price } from "../data/price";
+
+export type { Price };
 
 const I18nContext = createContext<I18nValue | null>(null);
 
 const weekDays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(detectLanguage);
+export function I18nProvider({
+  children,
+  initialLanguage,
+}: {
+  children: ReactNode;
+  /** Langue imposée : le pré-rendu des pages à la compilation est toujours en français. */
+  initialLanguage?: Language;
+}) {
+  const [language, setLanguageState] = useState<Language>(
+    () => initialLanguage ?? detectLanguage(),
+  );
   const { locale, dir } = languages.find((item) => item.code === language)!;
 
   useEffect(() => {

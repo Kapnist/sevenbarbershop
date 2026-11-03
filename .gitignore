@@ -1,6 +1,7 @@
 # Dépendances et compilation
 node_modules/
 dist/
+dist-ssr/
 
 # Photos d'origine non optimisées (les versions du site sont dans public/images/)
 photo/

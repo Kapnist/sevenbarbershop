@@ -23,11 +23,13 @@ function HomePage() {
     <>
       <section className="hero" id="accueil">
         <div className="wrap hero-content">
-          <p className="eyebrow">{home.eyebrow}</p>
-          <h1 lang="en">
-            Trust your
-            <br />
-            <span>barber.</span>
+          <h1>
+            <span className="eyebrow heading-eyebrow">{home.eyebrow}</span>{" "}
+            <span lang="en">
+              Trust your
+              <br />
+              <span className="hero-accent">barber.</span>
+            </span>
           </h1>
           <p className="hero-copy">{home.heroCopy}</p>
           <div className="hero-actions">

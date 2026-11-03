@@ -21,11 +21,19 @@ Ambiance club anglais : vert émeraude, or vieilli, fauteuils Chesterfield et bi
 
 À la compilation, `vite.config.ts` génère automatiquement :
 
-- une page HTML par route, avec son titre, sa description, ses balises Open Graph et ses données structurées schema.org (`src/data/seo.ts`) ;
-- le `sitemap.xml` et le `robots.txt` ;
+- une page HTML par route, avec son titre, sa description, ses balises Open Graph et ses données structurées schema.org (`src/data/seo.ts`) : salons (`HairSalon`) avec adresse, horaires, carte des tarifs et lien de réservation, fil d'Ariane, FAQ ;
+- le **contenu pré-rendu** de chaque page, en français (`src/entry-server.tsx` et `scripts/prerender.mjs`) : les moteurs de recherche lisent le texte sans exécuter le JavaScript, puis l'application prend le relais dans le navigateur ;
+- une page `404.html` non indexée ;
+- le `sitemap.xml`, le `robots.txt` et `assistant.md`, la fiche lue par le chatbot ;
 - les en-têtes de sécurité (Content-Security-Policy, HSTS, X-Frame-Options…), sous forme de `.htaccess` pour OVH (Apache) et de `_headers` pour Netlify.
 
-> La politique de sécurité n'autorise que le site lui-même et FormSubmit. Les polices, les images et les scripts doivent donc être hébergés dans le projet : pas de Google Fonts, pas d'images externes, pas d'iframe Google Maps.
+Les robots (Google, Bing, aperçus WhatsApp…) voient toujours le site en français, quelle que soit la langue de leur navigateur.
+
+> La politique de sécurité n'autorise que le site lui-même, FormSubmit et le chatbot (`CHATBOT_SOURCES` dans `vite.config.ts`). Les polices et les images doivent être hébergées dans le projet : pas de Google Fonts, pas d'images externes, pas d'iframe Google Maps.
+
+## Chatbot
+
+Le chatbot OntaChat est configuré dans `src/chatbot.ts` (webhook n8n, textes, couleurs). Il se charge 2,5 secondes après l'affichage de la page, pour ne pas ralentir le site. Il répond à partir de `assistant.md`, régénéré à chaque compilation.
 
 ## Technologies
 

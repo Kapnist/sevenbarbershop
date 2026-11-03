@@ -17,6 +17,8 @@ function seoPages(seo: Seo): Plugin {
   return {
     name: "seven-seo-pages",
     enforce: "post",
+    // Le pré-rendu (vite build --ssr) n'a pas de page HTML à traiter.
+    apply: (_config, env) => !env.isSsrBuild,
     transformIndexHtml(html, context) {
       const path = (context.originalUrl ?? "/").split(/[?#]/)[0];
       return withSeo(seo, html, path.length > 1 ? path.replace(/\/+$/, "") : "/");
@@ -53,7 +55,7 @@ function seoPages(seo: Seo): Plugin {
   };
 }
 
-// Chatbot OntaChat (index.html) : son script, la librairie n8n chat qu'il charge, et le serveur qui répond.
+// Chatbot OntaChat (src/chatbot.ts) : son script, la librairie n8n chat qu'il charge, et le serveur qui répond.
 const CHATBOT_SOURCES = {
   script: "https://www.ontadigital.com https://cdn.jsdelivr.net",
   style: "https://cdn.jsdelivr.net",
@@ -162,7 +164,7 @@ ${hostRedirect}  # Adresses propres : /salons sert salons.html.
 function securityHeaders(seo: Seo): Plugin {
   return {
     name: "seven-security-headers",
-    apply: "build",
+    apply: (_config, env) => env.command === "build" && !env.isSsrBuild,
     transformIndexHtml() {
       return [
         {
@@ -195,14 +197,12 @@ export default defineConfig(async ({ mode }) => {
     (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL = siteUrl;
   }
   const seo: Seo = await import("./src/data/seo");
-  // « as string » : ce module dépend des dictionnaires (JSX/DOM), que tsconfig.node ne vérifie pas.
-  const { renderChatbotInfo }: { renderChatbotInfo: (siteUrl: string, updated: string) => string } =
-    await import("./src/data/chatbotInfo" as string);
+  const { renderChatbotInfo } = await import("./src/data/chatbotInfo");
 
   // Fiche texte lue par le chatbot : les pages HTML de l'application sont vides pour un robot.
   const chatbotInfo: Plugin = {
     name: "seven-chatbot-info",
-    apply: "build",
+    apply: (_config, env) => env.command === "build" && !env.isSsrBuild,
     generateBundle() {
       this.emitFile({
         type: "asset",

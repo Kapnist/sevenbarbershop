@@ -1,4 +1,4 @@
-import type { Price } from "../i18n";
+import type { Price } from "./price";
 import type { Dictionary } from "../i18n/fr";
 
 export type ServiceNumber = keyof Dictionary["services"]["items"];

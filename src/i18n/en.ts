@@ -22,6 +22,7 @@ export const en: Dictionary = {
     back: "Back to home",
   },
   format: {
+    barberIn: (city: string) => `Barber in ${city}`,
     duration: (minutes: number) => {
       const hours = Math.floor(minutes / 60);
       const rest = minutes % 60;

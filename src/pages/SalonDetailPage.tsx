@@ -54,8 +54,12 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
         />
         <div className={`${hero}-hero-shade`} />
         <div className="wrap anatole-hero-content">
-          <p className="eyebrow">Seven Barbershop · {salon.city}</p>
-          <h1>{config.title}</h1>
+          <h1>
+            <span className="eyebrow heading-eyebrow">
+              {t.format.barberIn(salon.city)} · Seven Barbershop
+            </span>{" "}
+            {config.title}
+          </h1>
           <a
             className="anatole-address"
             href={mapsUrl}

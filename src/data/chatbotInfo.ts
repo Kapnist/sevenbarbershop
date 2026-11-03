@@ -1,4 +1,4 @@
-import type { Price } from "../i18n";
+import type { Price } from "./price";
 import { fr } from "../i18n/fr";
 import { salonPages } from "./salonPages";
 import { salonLocations } from "./salons";

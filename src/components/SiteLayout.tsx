@@ -48,7 +48,9 @@ function SiteHeader() {
         <Link className="brand" to="/" aria-label={t.nav.homeLabel}>
           <img
             className="brand-logo"
-            src={asset("/images/logo-seven.webp")}
+            src={asset("/images/logo-seven-header.webp")}
+            width={134}
+            height={62}
             alt="Seven Barbershop"
           />
         </Link>

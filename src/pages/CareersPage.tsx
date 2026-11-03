@@ -81,8 +81,10 @@ function CareersPage() {
         />
         <div className="jean-jaures-hero-shade" />
         <div className="wrap anatole-hero-content">
-          <p className="eyebrow">{page.eyebrow}</p>
-          <h1>{page.title}</h1>
+          <h1>
+            <span className="eyebrow heading-eyebrow">{page.eyebrow}</span>{" "}
+            {page.title}
+          </h1>
           <p className="careers-hero-copy">{page.description}</p>
           <a className="button" href="#candidature">
             {page.heroCta}
@@ -173,7 +175,7 @@ function CareersPage() {
               <input
                 type="hidden"
                 name="_next"
-                value={`${window.location.origin}${import.meta.env.BASE_URL}carrieres?candidature=envoyee`}
+                value={`${typeof window === "undefined" ? "" : window.location.origin}${import.meta.env.BASE_URL}carrieres?candidature=envoyee`}
               />
               {/* Les noms de champs et les valeurs envoyées restent en français pour l'équipe. */}
               <div className="field field-full">

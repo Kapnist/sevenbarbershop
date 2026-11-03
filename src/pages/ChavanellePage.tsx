@@ -34,8 +34,12 @@ function ChavanellePage() {
         />
         <div className="chavanelle-hero-shade" />
         <div className="wrap chavanelle-hero-content">
-          <p className="eyebrow">Seven Barbershop · Saint-Étienne</p>
-          <h1>Chavanelle</h1>
+          <h1>
+            <span className="eyebrow heading-eyebrow">
+              {t.format.barberIn("Saint-Étienne")} · Seven Barbershop
+            </span>{" "}
+            Chavanelle
+          </h1>
           <p>
             <bdi dir="ltr">17 Place Chavanelle · 42000 Saint-Étienne</bdi>
           </p>

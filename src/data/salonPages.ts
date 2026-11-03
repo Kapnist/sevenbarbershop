@@ -1,4 +1,4 @@
-import type { Price } from "../i18n";
+import type { Price } from "./price";
 
 export type SalonPageKey = "anatole" | "jeanJaures" | "meyerbeer" | "lePort";
 type Category = "cut" | "cutBeard" | "beard" | "colour";
@@ -33,17 +33,17 @@ export const salonPages: Record<SalonPageKey, SalonPageConfig> = {
     key: "anatole",
     locationName: "Anatole France",
     title: "Anatole France",
-    heroImage: "/images/anatole-france/devanture.png",
+    heroImage: "/images/anatole-france/devanture.webp",
     heroStyle: "anatole",
     galleryStyle: "anatole",
     rating: 4.8,
     reviews: 1212,
     photos: [
-      "/images/anatole-france/interieur.jpeg",
-      "/images/anatole-france/equipe.jpeg",
+      "/images/anatole-france/interieur.webp",
+      "/images/anatole-france/equipe.webp",
       "/images/anatole-france/photo-3.webp",
       "/images/anatole-france/photo-4.webp",
-      "/images/anatole-france/salon-cuir.jpeg",
+      "/images/anatole-france/salon-cuir.webp",
     ],
     services: [
       { category: "cut", duration: 30, price: 20 },

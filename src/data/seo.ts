@@ -1,4 +1,6 @@
 import { fr } from "../i18n/fr";
+import type { Price } from "./price";
+import { salonPages } from "./salonPages";
 import { salonLocations, type SalonLocation } from "./salons";
 
 // Domaine principal : le .com doit rediriger (301) vers cette adresse.
@@ -134,7 +136,38 @@ function salonId(salon: SalonLocation): string {
   return absoluteUrl(`${salon.detailsPath}#salon`);
 }
 
+/** Prix schema.org : un montant fixe, ou un minimum (« dès ») / une fourchette. */
+function offerPrice(price: Price) {
+  if (price === "quote") return {};
+  if (typeof price === "number") return { price: String(price), priceCurrency: "EUR" };
+  const [min, max] = Array.isArray(price) ? price : [price.from, undefined];
+  return {
+    priceSpecification: {
+      "@type": "PriceSpecification",
+      minPrice: String(min),
+      ...(max ? { maxPrice: String(max) } : {}),
+      priceCurrency: "EUR",
+    },
+  };
+}
+
+function offerCatalog(salon: SalonLocation) {
+  const page = Object.values(salonPages).find((config) => config.locationName === salon.name);
+  if (!page) return undefined;
+  const names = fr.salonPages[page.key].services;
+  return {
+    "@type": "OfferCatalog",
+    name: `Prestations ${SITE_NAME} ${salon.name}`,
+    itemListElement: page.services.map((service, index) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name: names[index] },
+      ...offerPrice(service.price),
+    })),
+  };
+}
+
 function salonSchema(salon: SalonLocation) {
+  const fullAddress = `${salon.streetAddress}, ${salon.postalCode} ${salon.city}`;
   return {
     "@type": "HairSalon",
     "@id": salonId(salon),
@@ -151,6 +184,16 @@ function salonSchema(salon: SalonLocation) {
       addressCountry: "FR",
     },
     openingHours: salon.openingHours,
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`,
+    currenciesAccepted: "EUR",
+    hasOfferCatalog: offerCatalog(salon),
+    potentialAction: salon.bookingUrl
+      ? {
+          "@type": "ReserveAction",
+          target: { "@type": "EntryPoint", urlTemplate: salon.bookingUrl },
+          result: { "@type": "Reservation", name: "Rendez-vous chez le barbier" },
+        }
+      : undefined,
     sameAs: salon.bookingUrl ? [salon.bookingUrl] : undefined,
     parentOrganization: { "@id": organizationId },
   };
@@ -296,10 +339,24 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
+/**
+ * Image de fond (CSS) du haut de l'accueil, téléchargée en priorité pour un affichage rapide.
+ * Les autres pages n'en ont pas besoin : React précharge déjà leurs images marquées fetchPriority.
+ */
+function heroImage(path: string): string | undefined {
+  if (path !== "/") return undefined;
+  const base = SITE_URL.replace(/^https?:\/\/[^/]+/, "").replace(/\/$/, "");
+  return `${base}/images/salon/salon-billard-fauteuils-cuir-1200.webp`;
+}
+
 /** Balises <head> statiques, injectées à la compilation dans chaque page. */
 export function renderHeadTags(path: string): string {
   const tags = getHeadTags(path);
+  const hero = heroImage(path);
   return [
+    ...(hero
+      ? [`<link rel="preload" as="image" href="${hero}" fetchpriority="high" />`]
+      : []),
     `<title>${escapeHtml(tags.title)}</title>`,
     ...tags.meta.map(
       (meta) => `<meta ${meta.key}="${meta.id}" content="${escapeHtml(meta.content)}" />`,

@@ -8,8 +8,10 @@ function PageIntro({ eyebrow, title, description }: PageIntroProps) {
   return (
     <section className="page-intro">
       <div className="wrap">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
+        <h1>
+          <span className="eyebrow heading-eyebrow">{eyebrow}</span>{" "}
+          {title}
+        </h1>
         <p className="page-intro-copy">{description}</p>
       </div>
     </section>

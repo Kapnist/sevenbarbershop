@@ -21,6 +21,7 @@ export const fr = {
     back: "Retour à l'accueil",
   },
   format: {
+    barberIn: (city: string) => `Barbier à ${city}`,
     duration: (minutes: number) => {
       const hours = Math.floor(minutes / 60);
       const rest = minutes % 60;
@@ -90,7 +91,7 @@ export const fr = {
     bookingButton: "Réserver maintenant",
   },
   services: {
-    eyebrow: "Le savoir-faire",
+    eyebrow: "Prestations et tarifs barbier",
     title: "Les classiques, faits à votre façon.",
     description:
       "Chaque rendez-vous commence par une écoute attentive et se termine au détail près.",
@@ -157,7 +158,7 @@ export const fr = {
     detailsLabel: "Les détails des salons Seven Barbershop",
   },
   locations: {
-    eyebrow: "Nos adresses",
+    eyebrow: "Nos barbiers à Saint-Étienne et Nice",
     title: "Seven, près de chez vous.",
     description:
       "Retrouvez nos salons à Saint-Étienne et à Nice. Choisissez l'adresse qui vous convient.",
@@ -268,7 +269,7 @@ export const fr = {
     },
   },
   careers: {
-    eyebrow: "Carrières",
+    eyebrow: "Recrutement barbier",
     title: "Rejoignez l'équipe Seven.",
     description:
       "Cinq salons, deux villes, une même passion : faire du métier de barbier un art, et le transmettre.",
