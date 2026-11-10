@@ -1,14 +1,21 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
-import { MAX_LENGTH, PHONE_PATTERN, useFormSubmit } from "../components/useFormSubmit";
+import {
+  MAX_LENGTH,
+  PHONE_PATTERN,
+  useFormSubmit,
+} from "../components/useFormSubmit";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
+import BookingLink from "../components/BookingLink";
 
 function ContactPage() {
   const { t } = useI18n();
   const page = t.contact;
-  const { state, submit } = useFormSubmit("Nouvelle suggestion — site Seven Barbershop");
+  const { state, submit } = useFormSubmit(
+    "Nouvelle suggestion — site Seven Barbershop",
+  );
   const [searchParams] = useSearchParams();
   const selectedSalon = searchParams.get("salon") ?? "";
   const selectedCity = searchParams.get("ville") ?? "";
@@ -16,8 +23,7 @@ function ContactPage() {
     selectedSalon ? `${selectedCity}|${selectedSalon}` : "",
   );
   const selectedLocationDetails = salonLocations.find(
-    (location) =>
-      `${location.city}|${location.name}` === selectedLocation,
+    (location) => `${location.city}|${location.name}` === selectedLocation,
   );
 
   function handleLocationChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -74,14 +80,17 @@ function ContactPage() {
             <h2>{page.formTitle}</h2>
             <p className="form-disclaimer">{page.disclaimer}</p>
             {selectedLocationDetails?.bookingUrl && (
-              <a
+              <BookingLink
                 className="button contact-booking-link"
-                href={selectedLocationDetails.bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                location={selectedLocationDetails}
+                onlineChildren={
+                  <>
+                    {t.booking.cta} <span aria-hidden="true">→</span>
+                  </>
+                }
               >
                 {t.salon.bookOnPlanity} <span aria-hidden="true">↗</span>
-              </a>
+              </BookingLink>
             )}
             <form className="booking-form" onSubmit={handleSubmit}>
               <div className="field field-full">

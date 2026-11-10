@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/copy-gestion.mjs",
+    "seed": "esbuild scripts/export-seed.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/export-seed.mjs --log-level=warning && node node_modules/.tmp/export-seed.mjs",
     "build:github": "tsc -b && vite build --mode github && vite build --mode github --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "vite preview"
   },

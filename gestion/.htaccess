@@ -1,0 +1,17 @@
+# Espace gérant et API de réservation Seven Barbershop (PHP).
+# Ce fichier remplace, pour /gestion, les règles d'adresses du site React.
+Options -Indexes
+DirectoryIndex index.php
+DirectorySlash On
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+</IfModule>
+
+# Le site React interdit les fichiers .php : on les autorise ici, sauf la configuration.
+<FilesMatch "\.php$">
+  Require all granted
+</FilesMatch>
+<FilesMatch "^(config\.php|install\.php\.bak|README\.md|seed\.json|\.htaccess)$">
+  Require all denied
+</FilesMatch>

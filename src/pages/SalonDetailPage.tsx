@@ -3,6 +3,7 @@ import type { SalonPageConfig } from "../data/salonPages";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 import { asset } from "../asset";
+import BookingLink from "../components/BookingLink";
 
 interface SalonText {
   heroAlt: string;
@@ -29,14 +30,19 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
   );
 
   if (!salon?.bookingUrl) {
-    throw new Error(`Les informations de réservation de ${config.title} sont manquantes.`);
+    throw new Error(
+      `Les informations de réservation de ${config.title} sont manquantes.`,
+    );
   }
 
   const address = `${salon.streetAddress} · ${salon.postalCode} ${salon.city}`;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${salon.streetAddress}, ${salon.postalCode} ${salon.city}`,
   )}`;
-  const rating = formatNumber(config.rating, Number.isInteger(config.rating) ? 0 : 1);
+  const rating = formatNumber(
+    config.rating,
+    Number.isInteger(config.rating) ? 0 : 1,
+  );
   const hero = config.heroStyle;
   const galleryHeading =
     config.galleryStyle === "anatole"
@@ -69,14 +75,17 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
             <bdi dir="ltr">{address}</bdi>
             <ExternalArrow />
           </a>
-          <a
+          <BookingLink
             className="button"
-            href={salon.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            location={salon}
+            onlineChildren={
+              <>
+                {t.booking.cta} <span aria-hidden="true">→</span>
+              </>
+            }
           >
             {t.salon.bookOnPlanity} <ExternalArrow />
-          </a>
+          </BookingLink>
           <p className="anatole-rating">
             <span aria-label={t.salon.ratingLabel(rating)}>★★★★★</span>
             <span>{t.salon.reviews(rating, formatNumber(config.reviews))}</span>
@@ -95,14 +104,17 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
             <p className="anatole-booking-note">
               {text.bookingNote ?? t.salon.bookingNote}
             </p>
-            <a
+            <BookingLink
               className="text-link"
-              href={salon.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              location={salon}
+              onlineChildren={
+                <>
+                  {t.salon.choose} <span aria-hidden="true">→</span>
+                </>
+              }
             >
               {t.salon.choose} <ExternalArrow />
-            </a>
+            </BookingLink>
           </div>
         </div>
       </section>
@@ -137,18 +149,23 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
               </article>
             ))}
           </div>
-          <a
+          <BookingLink
             className="text-link anatole-full-menu"
-            href={salon.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            location={salon}
+            onlineChildren={
+              <>
+                {t.booking.seeSlots} <span aria-hidden="true">→</span>
+              </>
+            }
           >
             {t.salon.seeAvailability} <ExternalArrow />
-          </a>
+          </BookingLink>
         </div>
       </section>
 
-      <section className={`page-section ${config.galleryStyle}-gallery-section`}>
+      <section
+        className={`page-section ${config.galleryStyle}-gallery-section`}
+      >
         <div className="wrap">
           <div className={galleryHeading}>
             <div>
@@ -192,14 +209,17 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
             </p>
             <h2>{t.salon.seeYouSoon}</h2>
           </div>
-          <a
+          <BookingLink
             className="button"
-            href={salon.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            location={salon}
+            onlineChildren={
+              <>
+                {t.salon.makeAppointment} <span aria-hidden="true">→</span>
+              </>
+            }
           >
             {t.salon.makeAppointment} <ExternalArrow />
-          </a>
+          </BookingLink>
         </div>
       </section>
 

@@ -1,0 +1,546 @@
+{
+  "salons": [
+    {
+      "slug": "anatole-france",
+      "name": "Anatole France",
+      "city": "Saint-Étienne",
+      "address": "12 Rue du 11 Novembre",
+      "postcode": "42100",
+      "planity_url": "https://www.planity.com/seven-barbershop-42100-saint-etienne",
+      "hours": [
+        {
+          "weekday": 0,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 1,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 2,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 3,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 4,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 5,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 6,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        }
+      ],
+      "services": [
+        {
+          "category": "cut",
+          "name": "Coupe adulte",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "cut",
+          "name": "Coupe étudiant",
+          "duration": 30,
+          "price_label": "17 €",
+          "price_eur": 17
+        },
+        {
+          "category": "cut",
+          "name": "Coupe enfant (-10 ans)",
+          "duration": 30,
+          "price_label": "14 €",
+          "price_eur": 14
+        },
+        {
+          "category": "cut",
+          "name": "Coupe transformation",
+          "duration": 40,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "cutBeard",
+          "name": "Adulte (+25 ans)",
+          "duration": 30,
+          "price_label": "30 €",
+          "price_eur": 30
+        },
+        {
+          "category": "cutBeard",
+          "name": "Étudiant (-25 ans)",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "cutBeard",
+          "name": "Avec soins",
+          "duration": 40,
+          "price_label": "35 à 40 €",
+          "price_eur": 35
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe express",
+          "duration": 15,
+          "price_label": "10 €",
+          "price_eur": 10
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe avec soins",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "beard",
+          "name": "Rasage à l'ancienne, serviette chaude",
+          "duration": 20,
+          "price_label": "15 €",
+          "price_eur": 15
+        }
+      ]
+    },
+    {
+      "slug": "jean-jaures",
+      "name": "Jean Jaurès",
+      "city": "Saint-Étienne",
+      "address": "1 Place Jean Jaurès",
+      "postcode": "42000",
+      "planity_url": "https://www.planity.com/seven-barbershop-42000-saint-etienne",
+      "hours": [
+        {
+          "weekday": 0,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 1,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 2,
+          "open": true,
+          "from": "10:00",
+          "to": "20:00"
+        },
+        {
+          "weekday": 3,
+          "open": true,
+          "from": "10:00",
+          "to": "20:00"
+        },
+        {
+          "weekday": 4,
+          "open": true,
+          "from": "10:00",
+          "to": "20:00"
+        },
+        {
+          "weekday": 5,
+          "open": true,
+          "from": "10:00",
+          "to": "20:00"
+        },
+        {
+          "weekday": 6,
+          "open": true,
+          "from": "10:00",
+          "to": "20:00"
+        }
+      ],
+      "services": [
+        {
+          "category": "cutBeard",
+          "name": "Adulte (+25 ans)",
+          "duration": 30,
+          "price_label": "35 €",
+          "price_eur": 35
+        },
+        {
+          "category": "cutBeard",
+          "name": "Étudiant (-25 ans)",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "cutBeard",
+          "name": "Avec soins (serviette chaude)",
+          "duration": 45,
+          "price_label": "45 €",
+          "price_eur": 45
+        },
+        {
+          "category": "cut",
+          "name": "Étudiant (-25 ans)",
+          "duration": 30,
+          "price_label": "18 €",
+          "price_eur": 18
+        },
+        {
+          "category": "cut",
+          "name": "Adulte (+25 ans)",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "cut",
+          "name": "Coupe transformation",
+          "duration": 40,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "beard",
+          "name": "Taille à la tondeuse",
+          "duration": 15,
+          "price_label": "10 €",
+          "price_eur": 10
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe & rasage",
+          "duration": 20,
+          "price_label": "15 €",
+          "price_eur": 15
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe & soins",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        }
+      ]
+    },
+    {
+      "slug": "chavanelle",
+      "name": "Place Chavanelle",
+      "city": "Saint-Étienne",
+      "address": "17 Place Chavanelle",
+      "postcode": "42000",
+      "planity_url": "https://www.planity.com/seven-barber-shop-42000-saint-etienne",
+      "hours": [
+        {
+          "weekday": 0,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 1,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 2,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 3,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 4,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 5,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 6,
+          "open": true,
+          "from": "09:00",
+          "to": "19:00"
+        }
+      ],
+      "services": null
+    },
+    {
+      "slug": "le-port",
+      "name": "Le Port",
+      "city": "Nice",
+      "address": "1 Boulevard Carnot",
+      "postcode": "06300",
+      "planity_url": "https://www.planity.com/seven-barber-le-port-nice-06300",
+      "hours": [
+        {
+          "weekday": 0,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 1,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 2,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 3,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 4,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 5,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 6,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        }
+      ],
+      "services": [
+        {
+          "category": "cutBeard",
+          "name": "Adulte",
+          "duration": 60,
+          "price_label": "40 €",
+          "price_eur": 40
+        },
+        {
+          "category": "cutBeard",
+          "name": "Étudiant",
+          "duration": 60,
+          "price_label": "35 €",
+          "price_eur": 35
+        },
+        {
+          "category": "cutBeard",
+          "name": "Avec soins",
+          "duration": 60,
+          "price_label": "45 €",
+          "price_eur": 45
+        },
+        {
+          "category": "cut",
+          "name": "Coupe adulte",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "cut",
+          "name": "Coupe étudiant",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "cut",
+          "name": "Coupe transformation",
+          "duration": 30,
+          "price_label": "30 €",
+          "price_eur": 30
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe classique",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe et soins",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        }
+      ]
+    },
+    {
+      "slug": "meyerbeer",
+      "name": "Rue Meyerbeer",
+      "city": "Nice",
+      "address": "4 Rue Meyerbeer",
+      "postcode": "06000",
+      "planity_url": "https://www.planity.com/seven-barbershop-06000-nice",
+      "hours": [
+        {
+          "weekday": 0,
+          "open": false,
+          "from": "09:00",
+          "to": "19:00"
+        },
+        {
+          "weekday": 1,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 2,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 3,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 4,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 5,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        },
+        {
+          "weekday": 6,
+          "open": true,
+          "from": "09:30",
+          "to": "19:00"
+        }
+      ],
+      "services": [
+        {
+          "category": "cutBeard",
+          "name": "Adulte (+25 ans)",
+          "duration": 60,
+          "price_label": "40 €",
+          "price_eur": 40
+        },
+        {
+          "category": "cutBeard",
+          "name": "Étudiant (-25 ans)",
+          "duration": 60,
+          "price_label": "35 €",
+          "price_eur": 35
+        },
+        {
+          "category": "cutBeard",
+          "name": "Avec soins (VIP)",
+          "duration": 60,
+          "price_label": "45 €",
+          "price_eur": 45
+        },
+        {
+          "category": "cut",
+          "name": "Adulte (+25 ans), shampoing inclus",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "cut",
+          "name": "Étudiant, shampoing inclus",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "cut",
+          "name": "Enfant (-15 ans), shampoing inclus",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "cut",
+          "name": "Coupe transformation",
+          "duration": 30,
+          "price_label": "30 €",
+          "price_eur": 30
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe classique",
+          "duration": 30,
+          "price_label": "20 €",
+          "price_eur": 20
+        },
+        {
+          "category": "beard",
+          "name": "Taille de barbe et soins",
+          "duration": 30,
+          "price_label": "25 €",
+          "price_eur": 25
+        },
+        {
+          "category": "colour",
+          "name": "Défrisage cheveux courts",
+          "duration": 30,
+          "price_label": "dès 10 €",
+          "price_eur": 10
+        },
+        {
+          "category": "colour",
+          "name": "Lissage brésilien cheveux courts",
+          "duration": 60,
+          "price_label": "dès 70 €",
+          "price_eur": 70
+        },
+        {
+          "category": "colour",
+          "name": "Couleur blanc polaire / gris",
+          "duration": 90,
+          "price_label": "Sur devis",
+          "price_eur": null
+        }
+      ]
+    }
+  ]
+}

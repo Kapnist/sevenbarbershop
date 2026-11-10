@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 import { asset } from "../asset";
+import BookingLink from "../components/BookingLink";
 
 const photos = [
   "/images/chavanelle/photo-2.webp",
@@ -20,7 +21,9 @@ function ChavanellePage() {
   );
 
   if (!salon?.bookingUrl) {
-    throw new Error("Les informations de réservation de Chavanelle sont manquantes.");
+    throw new Error(
+      "Les informations de réservation de Chavanelle sont manquantes.",
+    );
   }
 
   return (
@@ -43,14 +46,17 @@ function ChavanellePage() {
           <p>
             <bdi dir="ltr">17 Place Chavanelle · 42000 Saint-Étienne</bdi>
           </p>
-          <a
+          <BookingLink
             className="button"
-            href={salon.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            location={salon}
+            onlineChildren={
+              <>
+                {t.booking.cta} <span aria-hidden="true">→</span>
+              </>
+            }
           >
             {t.salon.bookOnPlanity} <span aria-hidden="true">↗</span>
-          </a>
+          </BookingLink>
           <p className="chavanelle-rating">
             <span aria-label={t.salon.ratingLabel(rating)}>★★★★★</span>
             <span>{t.salon.reviews(rating, formatNumber(521))}</span>
@@ -66,14 +72,17 @@ function ChavanellePage() {
           </div>
           <div>
             <p>{text.aboutText}</p>
-            <a
+            <BookingLink
               className="text-link"
-              href={salon.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              location={salon}
+              onlineChildren={
+                <>
+                  {text.chooseAndBook} <span aria-hidden="true">→</span>
+                </>
+              }
             >
               {text.chooseAndBook} <span aria-hidden="true">↗</span>
-            </a>
+            </BookingLink>
           </div>
         </div>
       </section>
@@ -110,14 +119,17 @@ function ChavanellePage() {
             <h2>{text.bookingTitle}</h2>
             <p>{text.bookingText}</p>
           </div>
-          <a
+          <BookingLink
             className="button"
-            href={salon.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            location={salon}
+            onlineChildren={
+              <>
+                {text.bookNow} <span aria-hidden="true">→</span>
+              </>
+            }
           >
             {text.bookNow} <span aria-hidden="true">↗</span>
-          </a>
+          </BookingLink>
         </div>
       </section>
 

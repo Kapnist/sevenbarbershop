@@ -5,6 +5,7 @@ import SiteLayout from "./components/SiteLayout";
 import { salonPages } from "./data/salonPages";
 import { useI18n } from "./i18n";
 import AboutPage from "./pages/AboutPage";
+import BookingPage from "./pages/BookingPage";
 import CareersPage from "./pages/CareersPage";
 import ChavanellePage from "./pages/ChavanellePage";
 import ContactPage from "./pages/ContactPage";
@@ -77,6 +78,7 @@ function App() {
           <Route path="a-propos" element={<AboutPage />} />
           <Route path="carrieres" element={<CareersPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="reservation" element={<BookingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

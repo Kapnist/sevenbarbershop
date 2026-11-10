@@ -15,3 +15,7 @@ Thumbs.db
 .env
 .env.*
 !.env.github
+!.env.production
+# Espace gérant : configuration et base locale de test, propres à chaque installation
+gestion/config.php
+gestion/data/*.sqlite

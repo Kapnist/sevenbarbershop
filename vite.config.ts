@@ -62,15 +62,22 @@ const CHATBOT_SOURCES = {
   connect: "https://n8n.ontadigital.com",
 };
 
-// Politique de sécurité du contenu : le site lui-même, FormSubmit (envoi des formulaires) et le chatbot.
-const CONTENT_SECURITY_POLICY = [
+/**
+ * API de réservation (dossier gestion/) quand elle est sur un autre domaine que le site
+ * (VITE_BOOKING_API absolue). Sur sevenbarbershop.fr, « /gestion/api » est déjà couvert par 'self'.
+ */
+const bookingApi = { origin: "" };
+
+// Politique de sécurité du contenu : le site lui-même, FormSubmit (envoi des formulaires), le chatbot
+// et, si besoin, l'API de réservation.
+const contentSecurityPolicy = () => [
   "default-src 'self'",
   `script-src 'self' ${CHATBOT_SOURCES.script}`,
   // Les styles en ligne servent au cadrage des photos (object-position) et aux couleurs du chatbot.
   `style-src 'self' 'unsafe-inline' ${CHATBOT_SOURCES.style}`,
   "img-src 'self' data:",
   "font-src 'self'",
-  `connect-src 'self' https://formsubmit.co ${CHATBOT_SOURCES.connect}`,
+  `connect-src 'self' https://formsubmit.co ${CHATBOT_SOURCES.connect}${bookingApi.origin ? ` ${bookingApi.origin}` : ""}`,
   "form-action 'self' https://formsubmit.co",
   "frame-src 'none'",
   "object-src 'none'",
@@ -80,18 +87,18 @@ const CONTENT_SECURITY_POLICY = [
 // Directives refusées dans une balise <meta> : uniquement dans les en-têtes HTTP.
 const HEADER_ONLY_POLICY = ["frame-ancestors 'none'", "upgrade-insecure-requests"];
 
-const SECURITY_HEADERS: Record<string, string> = {
-  "Content-Security-Policy": [...CONTENT_SECURITY_POLICY, ...HEADER_ONLY_POLICY].join("; "),
+const securityHeaderValues = (): Record<string, string> => ({
+  "Content-Security-Policy": [...contentSecurityPolicy(), ...HEADER_ONLY_POLICY].join("; "),
   "X-Frame-Options": "DENY",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Cross-Origin-Opener-Policy": "same-origin",
-};
+});
 
 function renderNetlifyHeaders(): string {
-  const lines = Object.entries(SECURITY_HEADERS).map(
+  const lines = Object.entries(securityHeaderValues()).map(
     ([name, value]) => `  ${name}: ${value}`,
   );
   return `/*\n${lines.join("\n")}\n`;
@@ -99,7 +106,7 @@ function renderNetlifyHeaders(): string {
 
 // Pensé pour l'hébergement mutualisé OVH (Apache).
 function renderHtaccess({ SITE_URL, REDIRECT_TO_SITE_URL }: Seo): string {
-  const headers = Object.entries(SECURITY_HEADERS)
+  const headers = Object.entries(securityHeaderValues())
     .map(([name, value]) => `  Header always set ${name} "${value}"`)
     .join("\n");
   const canonicalHost = SITE_URL.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
@@ -144,7 +151,10 @@ ${headers}
   # HTTPS obligatoire (méthode recommandée par OVH pour l'hébergement mutualisé).
   RewriteCond %{SERVER_PORT} 80
   RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
-${hostRedirect}  # Adresses propres : /salons sert salons.html.
+${hostRedirect}  # Réservation et espace gérant (PHP) : le dossier /gestion a ses propres règles.
+  RewriteRule ^gestion$ /gestion/ [R=301,L]
+  RewriteRule ^gestion/ - [L]
+  # Adresses propres : /salons sert salons.html.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME}.html -f
   RewriteRule ^(.+?)/?$ $1.html [L]
@@ -171,7 +181,7 @@ function securityHeaders(seo: Seo): Plugin {
           tag: "meta",
           attrs: {
             "http-equiv": "Content-Security-Policy",
-            content: CONTENT_SECURITY_POLICY.join("; "),
+            content: contentSecurityPolicy().join("; "),
           },
           injectTo: "head-prepend",
         },
@@ -192,7 +202,11 @@ function securityHeaders(seo: Seo): Plugin {
 // « npm run build:github » publie le site dans le sous-dossier /sevenbarbershop/ de GitHub Pages.
 // L'adresse du site (VITE_SITE_URL, dans .env.github) est fixée avant de charger les données SEO.
 export default defineConfig(async ({ mode }) => {
-  const siteUrl = loadEnv(mode, ".", "VITE_").VITE_SITE_URL;
+  const env = loadEnv(mode, ".", "VITE_");
+  const siteUrl = env.VITE_SITE_URL;
+  bookingApi.origin = /^https?:\/\//.test(env.VITE_BOOKING_API ?? "")
+    ? env.VITE_BOOKING_API.replace(/^(https?:\/\/[^/]+).*$/, "$1")
+    : "";
   if (siteUrl) {
     (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL = siteUrl;
   }

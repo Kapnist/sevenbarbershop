@@ -1,0 +1,71 @@
+# Seven Barbershop : réservation en ligne et espace gérant
+
+Le dossier `gestion/` contient la réservation en ligne et l'espace gérant. Il est écrit en PHP et MySQL, sans framework ni compilation. Il s'installe sur l'hébergement OVH, à côté du site React. Il est adapté du moteur de Dramey Style et étendu à plusieurs salons.
+
+- **Clients** : ils réservent sur `/reservation` du site Seven, sans créer de compte. Les étapes sont : salon, prestation, barbier (ou « sans préférence »), jour, heure, puis nom et téléphone. Seuls les créneaux réellement libres sont proposés.
+- **Gérants** : ils travaillent sur `/gestion/admin/`. On y trouve :
+  - l'agenda du jour, avec une colonne par barbier ;
+  - les barbiers et leur planning de la semaine, leurs absences et leurs congés ;
+  - les horaires et les fermetures de chaque salon ;
+  - les prestations et les prix ;
+  - la liste des rendez-vous, exportable en Excel ;
+  - les salons ;
+  - les accès gérants.
+
+## Accès
+
+| Accès | Ce qu'il voit |
+|---|---|
+| **Propriétaire** | Tous les salons. Il peut aussi ajouter un salon en un clic et créer les accès des responsables. |
+| **Responsable de salon** | Seulement son salon : agenda, barbiers, horaires, prix et rendez-vous. |
+| **Barbiers** | Pas de compte. Le gérant règle leur planning dans *Barbiers*. |
+
+## Installation sur OVH (une seule fois)
+
+1. **Créer une base MySQL** dans l'espace client OVH (*Hébergements*, puis *Bases de données*, puis *Créer une base*). Notez le serveur, le nom de la base, l'utilisateur et le mot de passe.
+2. **Compiler le site** avec `npm run build`. Le dossier `dist/` contient alors le site **et** `dist/gestion/`.
+3. **Envoyer le contenu de `dist/`** dans le dossier `www/` de l'hébergement, par FTP avec FileZilla. N'oubliez pas les fichiers cachés `.htaccess`.
+4. **Lancer l'installation** en ouvrant `https://www.sevenbarbershop.fr/gestion/install.php`. Choisissez MySQL, saisissez les identifiants de la base, puis le prénom, l'e-mail et le mot de passe du propriétaire. Les 5 salons sont alors créés, avec leurs barbiers, leurs horaires et leurs prestations.
+5. **Supprimer `gestion/install.php`** du serveur par FTP. C'est important pour la sécurité.
+6. **Se connecter** sur `https://www.sevenbarbershop.fr/gestion/admin/`.
+
+Le fichier `gestion/config.php`, créé par l'installation, contient le mot de passe de la base. Il n'est jamais servi au navigateur, et il ne faut pas l'envoyer sur GitHub (il est dans `.gitignore`).
+
+## Passer un salon de Planity au site, sans risque
+
+La réservation en ligne est **fermée dans chaque salon** après l'installation. Tant qu'elle est fermée, le bouton « Réserver » de ce salon mène toujours à Planity.
+
+1. Dans *Barbiers*, vérifiez les prénoms et le planning de chacun.
+2. Dans *Prestations & prix*, vérifiez les durées : elles servent à calculer les créneaux. Pour Chavanelle, la carte d'Anatole France a été reprise : ajustez-la.
+3. Recopiez dans l'agenda les rendez-vous déjà pris sur Planity pour les jours à venir. Vous pouvez aussi bloquer ces créneaux.
+4. Dans *Horaires & réservation*, cochez « Les clients réservent ce salon sur le site Seven ». Le bouton du site change aussitôt.
+5. Fermez les réservations de ce salon sur Planity pour éviter les doubles réservations. Les deux plannings ne se synchronisent pas.
+
+Commencez par un salon pilote, puis passez les autres.
+
+## Ajouter un salon
+
+Allez dans *Salons*, puis *Ajouter un salon*. Indiquez le nom, la ville et l'adresse, puis choisissez le salon dont reprendre les horaires et la carte. Ajoutez ensuite ses barbiers et ouvrez sa réservation. Le salon apparaît aussitôt sur la page de réservation du site.
+
+Sa **page vitrine** (une page `/salons/…` avec photos et texte) est différente : elle s'ajoute dans le code du site React.
+
+## Fichier clients et consentement
+
+Chaque réservation crée ou met à jour une fiche client (nom, téléphone, e-mail). La case « J'accepte que Seven Barbershop me contacte… » enregistre le consentement et sa date. Seuls ces clients pourront être relancés, comme l'exige la loi française (CNIL).
+
+## Pour les développeurs
+
+- **API publique** (JSON) :
+  - `api/catalog.php` donne les salons, les prestations et les barbiers ;
+  - `api/days.php` et `api/slots.php` donnent les jours et les créneaux libres ;
+  - `api/book.php` (POST) crée la réservation.
+- **Appel depuis un autre domaine** : un site sur un autre domaine (par exemple la version de test sur GitHub Pages) doit figurer dans `config.php`, rubrique `allowed_origins`.
+- **Site React** : `VITE_BOOKING_API` (dans `.env.production`) donne l'adresse de l'API. Sans cette variable, le site reste sur Planity.
+- **Données de départ** : `inc/seed.json` est généré à partir des données du site avec `npm run seed`.
+- **Test en local** : lancez `php -S localhost:8000` dans `gestion/`, ouvrez `install.php`, puis choisissez SQLite.
+- **Sécurité** :
+  - mots de passe hachés, connexion bloquée après 5 essais ratés ;
+  - jeton anti-CSRF et requêtes SQL préparées ;
+  - verrou contre les doubles réservations sur un même créneau ;
+  - limite de 5 réservations par heure et par appareil, et champ piège pour les robots ;
+  - aucun script dans les pages, ce qui respecte la politique de sécurité du site.

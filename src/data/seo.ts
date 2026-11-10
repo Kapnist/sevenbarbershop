@@ -87,6 +87,12 @@ const pageSeo: Record<string, PageSeo> = {
       "Une question ou une suggestion ? Écrivez à l'équipe Seven Barbershop, votre barbier à Saint-Étienne et Nice. Chaque message est lu.",
     breadcrumb: "Contact",
   },
+  "/reservation": {
+    title: "Réserver chez le barbier à Saint-Étienne et Nice — Seven Barbershop",
+    description:
+      "Réservez en ligne votre coupe ou votre barbe chez Seven Barbershop : choisissez votre salon, votre barbier et un créneau libre, en quelques secondes.",
+    breadcrumb: "Réservation",
+  },
   "/salons/anatole-france": {
     title: "Barbier Saint-Étienne Anatole France — Seven Barbershop",
     description:

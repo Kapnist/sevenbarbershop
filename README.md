@@ -31,6 +31,14 @@ Les robots (Google, Bing, aperçus WhatsApp…) voient toujours le site en fran�
 
 > La politique de sécurité n'autorise que le site lui-même, FormSubmit et le chatbot (`CHATBOT_SOURCES` dans `vite.config.ts`). Les polices et les images doivent être hébergées dans le projet : pas de Google Fonts, pas d'images externes, pas d'iframe Google Maps.
 
+## Réservation en ligne et espace gérant
+
+Le dossier `gestion/` (PHP et MySQL, sur OVH) gère la réservation en ligne sur `/reservation` et l'espace gérant sur `/gestion/admin/`. On y trouve l'agenda par salon avec une colonne par barbier, les plannings des barbiers, les horaires, les prix, les rendez-vous, les salons et les accès.
+
+`npm run build` copie ce dossier dans `dist/gestion/`. Installation et mode d'emploi : [`gestion/README.md`](gestion/README.md).
+
+Tant que la réservation en ligne d'un salon est fermée dans l'espace gérant, ou que `VITE_BOOKING_API` n'est pas défini (c'est le cas de la version GitHub Pages), les boutons « Réserver » mènent à Planity.
+
 ## Chatbot
 
 Le chatbot OntaChat est configuré dans `src/chatbot.ts` (webhook n8n, textes, couleurs). Il se charge 2,5 secondes après l'affichage de la page, pour ne pas ralentir le site. Il répond à partir de `assistant.md`, régénéré à chaque compilation.

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
+import BookingLink from "../components/BookingLink";
 
 const cities = ["Saint-Étienne", "Nice"];
 
@@ -59,31 +60,45 @@ function LocationsPage() {
                               {hours.open.map((line) => (
                                 <span key={line}>{line}</span>
                               ))}
-                              <span className="location-closed">{hours.closed}</span>
+                              <span className="location-closed">
+                                {hours.closed}
+                              </span>
                             </p>
                           )}
                         </div>
                         <div className="location-actions">
                           {location.detailsPath && (
-                            <Link className="location-link" to={location.detailsPath}>
+                            <Link
+                              className="location-link"
+                              to={location.detailsPath}
+                            >
                               {page.discover} <span aria-hidden="true">→</span>
                             </Link>
                           )}
                           {location.bookingUrl ? (
-                            <a
+                            <BookingLink
                               className="location-link"
-                              href={location.bookingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={page.bookLabel(location.name, location.city)}
+                              location={location}
+                              ariaLabel={page.bookLabel(
+                                location.name,
+                                location.city,
+                              )}
+                              onlineChildren={
+                                <>
+                                  {page.book} <span aria-hidden="true">→</span>
+                                </>
+                              }
                             >
                               {page.book} <span aria-hidden="true">↗</span>
-                            </a>
+                            </BookingLink>
                           ) : (
                             <Link
                               className="location-link"
                               to={`/contact?ville=${encodeURIComponent(location.city)}&salon=${encodeURIComponent(location.name)}`}
-                              aria-label={page.contactLabel(location.name, location.city)}
+                              aria-label={page.contactLabel(
+                                location.name,
+                                location.city,
+                              )}
                             >
                               {page.contact} <span aria-hidden="true">→</span>
                             </Link>

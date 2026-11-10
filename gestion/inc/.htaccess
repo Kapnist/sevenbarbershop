@@ -1,0 +1,5 @@
+# Dossier interne : jamais accessible depuis le navigateur.
+Require all denied
+<FilesMatch ".*">
+  Require all denied
+</FilesMatch>
