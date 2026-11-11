@@ -27,7 +27,7 @@ $brand = setting('brand_name', 'Seven Barbershop');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Connexion — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=4">
+<link rel="stylesheet" href="admin.css?v=5">
 </head>
 <body class="auth">
 <main class="auth-card">

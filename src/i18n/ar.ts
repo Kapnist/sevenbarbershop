@@ -9,6 +9,8 @@ export const ar: Dictionary = {
     about: "من نحن",
     careers: "الوظائف",
     contact: "اتصل بنا",
+
+    book: "احجز",
     label: "القائمة الرئيسية",
     homeLabel: "Seven Barbershop، الصفحة الرئيسية",
     openMenu: "فتح القائمة",

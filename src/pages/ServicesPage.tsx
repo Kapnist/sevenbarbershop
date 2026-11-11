@@ -23,7 +23,7 @@ function ServicesPage() {
           </div>
           <div className="page-cta">
             <p>{t.services.ctaText}</p>
-            <Link className="button" to="/salons">
+            <Link className="button" to="/reservation">
               {t.services.ctaButton}
             </Link>
           </div>

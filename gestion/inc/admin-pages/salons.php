@@ -30,6 +30,36 @@ admin_header('Salons', 'salons', $user, $salon);
   <div><h1>Salons</h1><p class="muted">Ajoutez un salon en un clic : il reprend les horaires et la carte d'un salon existant, puis vous ajoutez ses barbiers. Il apparaît dans la réservation en ligne dès que vous l'ouvrez.</p></div>
 </div>
 
+<?php $openCount = count(array_filter($all, fn($s) => (int) $s['booking_enabled'] === 1)); ?>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Réservation sur le site Seven</h2>
+      <p class="muted small"><?= $openCount ?> salon<?= $openCount > 1 ? 's' : '' ?> sur <?= count($all) ?> prenne<?= $openCount > 1 ? 'nt' : '' ?> les rendez-vous en ligne. Les autres renvoient vers Planity.</p>
+    </div>
+    <div class="head-actions">
+      <?php if ($openCount < count($all)): ?>
+        <form method="post" class="inline" data-confirm="Ouvrir la réservation en ligne dans tous les salons ? Pensez à fermer les réservations sur Planity pour éviter les doublons.">
+          <?= csrf_field() ?><input type="hidden" name="action" value="booking_all"><input type="hidden" name="open" value="1"><input type="hidden" name="back" value="<?= e($back) ?>">
+          <button class="btn" type="submit">Ouvrir dans tous les salons</button>
+        </form>
+      <?php endif; ?>
+      <?php if ($openCount > 0): ?>
+        <form method="post" class="inline" data-confirm="Fermer la réservation en ligne partout ? Les clients seront renvoyés vers Planity.">
+          <?= csrf_field() ?><input type="hidden" name="action" value="booking_all"><input type="hidden" name="open" value="0"><input type="hidden" name="back" value="<?= e($back) ?>">
+          <button class="btn ghost" type="submit">Tout renvoyer vers Planity</button>
+        </form>
+      <?php endif; ?>
+    </div>
+  </div>
+  <ul class="list">
+    <?php foreach ($all as $s): ?>
+      <li><span><?= e($s['name']) ?> <span class="muted small"><?= e($s['city']) ?></span></span>
+        <?= (int) $s['booking_enabled'] === 1 ? '<span class="pill ok">Site Seven</span>' : '<span class="pill">Planity</span>' ?></li>
+    <?php endforeach; ?>
+  </ul>
+</section>
+
 <section class="panel highlight">
   <div class="panel-head"><h2>+ Ajouter un salon</h2></div>
   <form method="post" class="stack">

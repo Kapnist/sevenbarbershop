@@ -33,7 +33,7 @@ function HomePage() {
           </h1>
           <p className="hero-copy">{home.heroCopy}</p>
           <div className="hero-actions">
-            <Link className="button" to="/salons">
+            <Link className="button" to="/reservation">
               {home.ctaBook}
             </Link>
             <Link className="button button-outline" to="/prestations">
@@ -163,7 +163,7 @@ function HomePage() {
             <p className="eyebrow">Trust your barber</p>
             <h2>{home.bookingTitle}</h2>
           </div>
-          <Link className="button" to="/salons">
+          <Link className="button" to="/reservation">
             {home.bookingButton}
           </Link>
         </div>

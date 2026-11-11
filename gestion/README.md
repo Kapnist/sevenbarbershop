@@ -36,7 +36,11 @@ Le fichier `gestion/config.php`, créé par l'installation, contient le mot de p
 
 ## Passer un salon de Planity au site, sans risque
 
-La réservation en ligne est **fermée dans chaque salon** après l'installation. Tant qu'elle est fermée, le bouton « Réserver » de ce salon mène toujours à Planity.
+Les clients réservent sur le site depuis le bouton **« Réserver »** de l'en-tête, l'accueil, la page Prestations, le pied de page et chaque page salon.
+
+À l'installation, la case « Les clients réservent sur le site Seven dans les 5 salons dès maintenant » est **cochée par défaut**. Décochez-la pour garder Planity et ouvrir les salons un par un. Plus tard, le propriétaire peut tout ouvrir ou tout fermer en un clic dans *Salons*. Un salon fermé renvoie vers Planity.
+
+Pour passer un salon de Planity au site sans risque :
 
 1. Dans *Barbiers*, vérifiez les prénoms et le planning de chacun.
 2. Dans *Prestations & prix*, vérifiez les durées : elles servent à calculer les créneaux. Pour Chavanelle, la carte d'Anatole France a été reprise : ajustez-la.

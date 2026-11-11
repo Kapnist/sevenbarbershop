@@ -8,6 +8,8 @@ export const fr = {
     about: "À propos",
     careers: "Carrières",
     contact: "Contact",
+
+    book: "Réserver",
     label: "Navigation principale",
     homeLabel: "Seven Barbershop, accueil",
     openMenu: "Ouvrir le menu",

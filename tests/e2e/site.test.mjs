@@ -16,7 +16,9 @@ import { phpAvailable, startBackOffice } from "../helpers/php-server.mjs";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 const SHOTS = process.env.SCREENSHOT_DIR;
-const WIDTHS = [320, 375, 768, 1024, 1440];
+// Petits et grands téléphones, tablettes (portrait et paysage), portables, grands écrans.
+const WIDTHS = [320, 360, 375, 390, 414, 600, 768, 820, 1024, 1280, 1440, 1920];
+const ADMIN_WIDTHS = [320, 360, 414, 768, 1024, 1280, 1920];
 const PAGES = [
   "/",
   "/prestations",
@@ -188,7 +190,105 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
     await context.close();
   });
 
-  test("responsive : aucune page du site ne déborde horizontalement (320 → 1440 px)", async () => {
+  test("le client trouve « Réserver » partout : en-tête, accueil, prestations, pied de page", async () => {
+    const { page, context } = await newPage(1280);
+    await page.goto(base + "/");
+    for (const selector of [".nav-book", ".hero-actions .button", ".anatole-booking .button", ".footer-links a[href='/reservation']"]) {
+      assert.equal(await page.locator(selector).first().getAttribute("href"), "/reservation", selector);
+    }
+    await page.goto(base + "/prestations");
+    assert.equal(await page.locator(".page-cta .button").getAttribute("href"), "/reservation");
+    await page.locator(".nav-book").click();
+    await page.getByRole("heading", { name: /Salon/ }).waitFor();
+    assert.ok((await page.locator(".booking-option").count()) >= 5, "les 5 salons sont proposés");
+    await context.close();
+  });
+
+  test("tous les salons ouverts : chaque bouton de salon mène à la réservation du site", async () => {
+    const { session } = await bo.login();
+    await session.action({ action: "booking_all", open: "1" }, "salons");
+    bo.sql("DELETE FROM login_attempts");
+    const { page, context } = await newPage(390, 844);
+    for (const slug of ["anatole-france", "jean-jaures", "chavanelle", "le-port", "meyerbeer"]) {
+      await page.goto(`${base}/salons/${slug}`);
+      const cta = page.locator("a.button").filter({ hasText: /Réserver|rendez-vous/i }).first();
+      await page.waitForFunction(
+        () => [...document.querySelectorAll("a.button")].some((a) => a.getAttribute("href")?.startsWith("/reservation")),
+      );
+      assert.match(await cta.getAttribute("href"), new RegExp(`^/reservation\\?salon=${slug}$`), slug);
+    }
+    // Réservation possible dans chaque salon : au moins un créneau libre proposé
+    await page.goto(`${base}/reservation?salon=meyerbeer`);
+    await page.locator(".booking-services .booking-option").first().click();
+    await page.getByRole("button", { name: /Sans préférence/ }).click();
+    await page.locator(".booking-day:not([disabled])").first().click();
+    await page.locator(".booking-slot").first().waitFor();
+    await context.close();
+  });
+
+  test("en-tête : logo, « Réserver », langue et menu ne se chevauchent sur aucun écran", async () => {
+    const problems = [];
+    for (const width of WIDTHS) {
+      const { page, context } = await newPage(width);
+      await page.goto(base + "/");
+      const boxes = await page.evaluate(() =>
+        [".brand", ".nav-book", ".language-switcher", ".menu-toggle", ".nav-links"]
+          .map((s) => [s, document.querySelector(s)])
+          .filter(([, el]) => el && getComputedStyle(el).display !== "none" && el.getBoundingClientRect().width > 0)
+          .map(([s, el]) => {
+            const r = el.getBoundingClientRect();
+            return { s, left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+          }),
+      );
+      if (!boxes.some((b) => b.s === ".nav-book")) problems.push(`${width}px : bouton Réserver absent`);
+      const brand = boxes.find((b) => b.s === ".brand");
+      if (!brand || brand.right - brand.left < 60) problems.push(`${width}px : logo écrasé (${brand ? Math.round(brand.right - brand.left) : 0}px)`);
+      // Chaque lien du menu affiché tient sur une seule ligne
+      const wrapped = await page.evaluate(() =>
+        [...document.querySelectorAll(".nav-links a")]
+          .filter((a) => a.getClientRects().length && getComputedStyle(a.closest(".nav-links")).display !== "none")
+          .filter((a) => a.getBoundingClientRect().height > parseFloat(getComputedStyle(a).fontSize) * 2.2)
+          .map((a) => a.textContent),
+      );
+      if (wrapped.length) problems.push(`${width}px : liens sur deux lignes (${wrapped.join(", ")})`);
+      // Quand le menu est replié, le bouton l'ouvre
+      if (await page.locator(".menu-toggle").isVisible()) {
+        await page.locator(".menu-toggle").click();
+        if (!(await page.locator(".nav-links.is-open a").first().isVisible())) problems.push(`${width}px : le menu ne s'ouvre pas`);
+        await page.locator(".menu-toggle").click();
+      }
+      for (const b of boxes) if (b.right > width + 1 || b.left < -1) problems.push(`${width}px : ${b.s} sort de l'écran`);
+      for (let i = 0; i < boxes.length; i++)
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i], c = boxes[j];
+          if (a.left < c.right - 1 && c.left < a.right - 1 && a.top < c.bottom - 1 && c.top < a.bottom - 1)
+            problems.push(`${width}px : ${a.s} chevauche ${c.s}`);
+        }
+      if ([320, 768, 1024, 1920].includes(width)) await shot(page, `entete-${width}`);
+      await context.close();
+    }
+    assert.deepEqual(problems, []);
+  });
+
+  test("téléphone à l'horizontale et tablette : réservation utilisable", async () => {
+    for (const [w, h, name] of [[844, 390, "telephone-paysage"], [1024, 768, "tablette-paysage"], [768, 1024, "tablette-portrait"]]) {
+      const { page, errors, context } = await newPage(w, h);
+      await page.goto(`${base}/reservation?salon=anatole-france`);
+      await page.locator(".booking-services .booking-option").first().click();
+      await page.getByRole("button", { name: /Sans préférence/ }).click();
+      await page.locator(".booking-day:not([disabled])").first().click();
+      await page.locator(".booking-slot").first().waitFor();
+      assert.equal(await overflow(page), 0, name);
+      // Les créneaux restent des cibles tactiles confortables (44 px de haut au minimum).
+      const slotHeight = await page.locator(".booking-slot").first().evaluate((el) => el.getBoundingClientRect().height);
+      assert.ok(slotHeight >= 44, `${name} : créneau de ${slotHeight}px`);
+      await shot(page, `reservation-${name}`);
+      assert.deepEqual(errors, []);
+      await context.close();
+    }
+  });
+
+  test("responsive : aucune page du site ne déborde horizontalement (320 → 1920 px)", async () => {
     const problems = [];
     for (const width of WIDTHS) {
       const { page, errors, context } = await newPage(width);
@@ -221,7 +321,7 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
 
   test("espace gérant : menu mobile, pages lisibles du téléphone au grand écran", async () => {
     const problems = [];
-    for (const width of [360, 768, 1280]) {
+    for (const width of ADMIN_WIDTHS) {
       const { page, context } = await newPage(width);
       await page.goto(`${base}/gestion/admin/login.php`);
       assert.equal(await overflow(page), 0, `connexion @${width}`);

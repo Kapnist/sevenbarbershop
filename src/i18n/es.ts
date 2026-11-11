@@ -9,6 +9,8 @@ export const es: Dictionary = {
     about: "Quiénes somos",
     careers: "Empleo",
     contact: "Contacto",
+
+    book: "Reservar",
     label: "Navegación principal",
     homeLabel: "Seven Barbershop, inicio",
     openMenu: "Abrir el menú",

@@ -453,6 +453,17 @@ function run_admin_action(string $action, array $user, array $salon): void
             break;
         }
 
+        /* ---------- Réservation en ligne dans tous les salons (propriétaire) ---------- */
+        case 'booking_all': {
+            if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
+            $open = post('open') === '1';
+            q('UPDATE salons SET booking_enabled = ?', [$open ? 1 : 0]);
+            flash($open
+                ? 'Réservation en ligne ouverte dans tous les salons : les clients réservent sur le site Seven.'
+                : 'Réservation en ligne fermée partout : les boutons du site renvoient vers Planity.');
+            break;
+        }
+
         /* ---------- Fichier clients ---------- */
         case 'client_consent': {
             $id = post_int('id');

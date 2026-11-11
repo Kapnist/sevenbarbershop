@@ -312,6 +312,18 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.equal(bo.sql("SELECT COUNT(*) n FROM appointments WHERE client_phone = '06 12 34 56 78'")[0].n, 0);
   });
 
+  test("propriétaire : ouvrir puis fermer la réservation en ligne dans tous les salons", async () => {
+    const opened = await admin.action({ action: "booking_all", open: "1" }, "salons");
+    assert.match(opened, /ouverte dans tous les salons/);
+    let { salons } = await json(await api("catalog.php"));
+    assert.ok(salons.every((s) => s.booking && s.services.length > 0 && s.staff.length > 0), "les 5 salons réservables avec carte et barbiers");
+
+    const closed = await admin.action({ action: "booking_all", open: "0" }, "salons");
+    assert.match(closed, /renvoient vers Planity/);
+    ({ salons } = await json(await api("catalog.php")));
+    assert.ok(salons.every((s) => !s.booking));
+  });
+
   test("le serveur PHP n'a journalisé aucune erreur", () => {
     assert.doesNotMatch(bo.log, PHP_ERRORS);
   });

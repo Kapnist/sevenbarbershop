@@ -375,3 +375,11 @@ code { background: var(--cream); padding: .1rem .35rem; border-radius: 5px; font
   .kpi span { font-size: .7rem; }
   .table td:first-child { min-width: 130px; }
 }
+/* Très petits téléphones : la semaine tient toujours sur une ligne */
+@media (max-width: 400px) {
+  .week { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .2rem; }
+  .week-day { padding: .4rem 0; font-size: .64rem; min-width: 0; }
+  .week-day span { white-space: normal; text-align: center; line-height: 1.15; }
+  .week-day b { font-size: .95rem; }
+  .content { padding-left: .75rem; padding-right: .75rem; }
+}

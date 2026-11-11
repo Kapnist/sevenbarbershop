@@ -162,7 +162,8 @@ const SEED_STAFF = [
     'meyerbeer' => ['Archaf', 'Ayouba', 'Panos', 'Raza'],
 ];
 
-function seed_data(PDO $pdo): void
+/** $openBooking : les clients réservent tout de suite sur le site (sinon chaque salon reste sur Planity). */
+function seed_data(PDO $pdo, bool $openBooking = false): void
 {
     $seed = json_decode((string) file_get_contents(__DIR__ . '/seed.json'), true);
     $settings = [
@@ -172,7 +173,7 @@ function seed_data(PDO $pdo): void
     $st = $pdo->prepare('INSERT INTO settings (k, v) VALUES (?, ?)');
     foreach ($settings as $k => $v) $st->execute([$k, $v]);
 
-    $insSalon = $pdo->prepare('INSERT INTO salons (slug, name, city, address, postcode, planity_url, sort) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $insSalon = $pdo->prepare('INSERT INTO salons (slug, name, city, address, postcode, planity_url, sort, booking_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ' . ($openBooking ? 1 : 0) . ')');
     $insHours = $pdo->prepare('INSERT INTO opening_hours (salon_id, weekday, is_open, open_time, close_time) VALUES (?, ?, ?, ?, ?)');
     $insStaff = $pdo->prepare('INSERT INTO staff (salon_id, name, color, bookable, active, sort) VALUES (?, ?, ?, 1, 1, ?)');
     $insStaffHours = $pdo->prepare('INSERT INTO staff_hours (staff_id, weekday, is_working, start_time, end_time) VALUES (?, ?, ?, ?, ?)');

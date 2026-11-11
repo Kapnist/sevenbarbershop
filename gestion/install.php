@@ -24,6 +24,8 @@ $in = [
     'email' => trim($_POST['email'] ?? ''),
     'password' => $_POST['password'] ?? '',
     'origins' => trim($_POST['origins'] ?? 'https://kapnist.github.io'),
+    // Case cochée par défaut : les clients réservent sur le site dès l'installation.
+    'open_booking' => $_SERVER['REQUEST_METHOD'] === 'POST' ? isset($_POST['open_booking']) : true,
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Pas de transaction autour du DDL : MySQL valide implicitement chaque CREATE TABLE.
             foreach (schema_sql($driver) as $sql) $pdo->exec($sql);
             $pdo->beginTransaction();
-            seed_data($pdo);
+            seed_data($pdo, $in['open_booking']);
             $pdo->prepare('INSERT INTO admins (name, email, password_hash, salon_id, created_at) VALUES (?, ?, ?, NULL, ?)')
                 ->execute([$in['admin_name'] ?: 'Propriétaire', $in['email'], password_hash($in['password'], PASSWORD_DEFAULT), date('Y-m-d H:i:s')]);
             $pdo->commit();
@@ -90,7 +92,11 @@ send_security_headers();
   <?php if ($done): ?>
     <div class="alert ok">Installation terminée : 5 salons, leurs barbiers, horaires et prestations ont été créés.</div>
     <p><strong>Important :</strong> supprimez maintenant le fichier <code>install.php</code> de votre serveur.</p>
-    <p>La réservation en ligne est <strong>fermée</strong> dans chaque salon : ouvrez-la salon par salon dans <em>Planning</em> quand vous êtes prêt.</p>
+    <?php if ($in['open_booking']): ?>
+      <p>La réservation en ligne est <strong>ouverte</strong> dans les 5 salons : les clients réservent sur le site Seven. Vérifiez les barbiers, leurs horaires et les prestations, puis <strong>fermez les réservations sur Planity</strong> pour éviter les doublons.</p>
+    <?php else: ?>
+      <p>La réservation en ligne est <strong>fermée</strong> dans chaque salon : ouvrez-la salon par salon dans <em>Horaires &amp; réservation</em> quand vous êtes prêt.</p>
+    <?php endif; ?>
     <p><a class="btn" href="admin/">Ouvrir l'espace gérant</a></p>
   <?php else: ?>
     <?php foreach ($errors as $err): ?><div class="alert err"><?= e($err) ?></div><?php endforeach; ?>
@@ -115,6 +121,11 @@ send_security_headers();
         <label>Prénom <input name="admin_name" value="<?= e($in['admin_name']) ?>"></label>
         <label>E-mail <input name="email" type="email" required value="<?= e($in['email']) ?>"></label>
         <label>Mot de passe (10 caractères minimum) <input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
+      </fieldset>
+      <fieldset class="stack">
+        <legend>Réservation en ligne</legend>
+        <label class="check"><input type="checkbox" name="open_booking" value="1"<?= $in['open_booking'] ? ' checked' : '' ?>> Les clients réservent sur le site Seven dans les 5 salons dès maintenant</label>
+        <p class="muted small">Décochez pour garder Planity et ouvrir les salons un par un plus tard (<em>Horaires &amp; réservation</em>).</p>
       </fieldset>
       <fieldset class="stack">
         <legend>Sites autorisés à réserver depuis un autre domaine</legend>

@@ -70,6 +70,9 @@ function SiteHeader() {
             </li>
           ))}
         </ul>
+        <Link className="nav-book" to="/reservation">
+          {t.nav.book}
+        </Link>
         <LanguageSwitcher />
         <button
           className="menu-toggle"
@@ -87,6 +90,7 @@ function SiteHeader() {
 }
 
 const footerNavigation = [
+  { to: "/reservation", key: "book" },
   { to: "/salons", key: "salons" },
   { to: "/a-propos", key: "about" },
   { to: "/carrieres", key: "careers" },
