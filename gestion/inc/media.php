@@ -38,12 +38,21 @@ function ensure_media_schema(): void
         original_name VARCHAR(190) NOT NULL DEFAULT '',
         created_at DATETIME NOT NULL
     )$tail");
+    // Une ligne = une photo d'un emplacement : soit une photo de la médiathèque (media_id),
+    // soit une photo d'origine du site gardée dans une galerie modifiée (origin = son rang, media_id = 0).
     db()->exec("CREATE TABLE IF NOT EXISTS media_slots (
         id $id,
         slot VARCHAR(80) NOT NULL,
         media_id $fk NOT NULL,
-        sort INT NOT NULL DEFAULT 0
+        sort INT NOT NULL DEFAULT 0,
+        origin INT NULL
     )$tail");
+    // Installations créées avant les galeries photo par photo : ajout de la colonne origin
+    try {
+        db()->query('SELECT origin FROM media_slots LIMIT 1');
+    } catch (PDOException) {
+        db()->exec('ALTER TABLE media_slots ADD COLUMN origin INT NULL');
+    }
 }
 
 /* ---------- Emplacements du site ---------- */
@@ -253,11 +262,17 @@ function media_delete(int $id): void
 
 /* ---------- Photos placées sur les emplacements ---------- */
 
-/** Photos d'un emplacement, dans l'ordre. */
+/**
+ * Photos d'un emplacement, dans l'ordre. Chaque ligne a link_id (son identifiant dans
+ * l'emplacement) et, pour une photo d'origine gardée dans une galerie, origin (son rang).
+ */
 function slot_media(string $slot): array
 {
     ensure_media_schema();
-    return q('SELECT m.*, ms.id AS link_id, ms.sort FROM media_slots ms JOIN media m ON m.id = ms.media_id WHERE ms.slot = ? ORDER BY ms.sort, ms.id', [$slot])->fetchAll();
+    return q('SELECT m.*, ms.id AS link_id, ms.sort, ms.origin, ms.media_id AS link_media
+              FROM media_slots ms LEFT JOIN media m ON m.id = ms.media_id AND ms.media_id > 0
+              WHERE ms.slot = ? AND (ms.origin IS NOT NULL OR m.id IS NOT NULL)
+              ORDER BY ms.sort, ms.id', [$slot])->fetchAll();
 }
 
 /** Emplacements où une photo est utilisée (pour la médiathèque). */
@@ -265,7 +280,7 @@ function media_usage(): array
 {
     ensure_media_schema();
     $out = [];
-    foreach (q('SELECT media_id, slot FROM media_slots')->fetchAll() as $r) $out[(int) $r['media_id']][] = $r['slot'];
+    foreach (q('SELECT media_id, slot FROM media_slots WHERE media_id > 0')->fetchAll() as $r) $out[(int) $r['media_id']][] = $r['slot'];
     return $out;
 }
 
@@ -275,10 +290,53 @@ function slot_set_single(string $slot, int $mediaId): void
     q('INSERT INTO media_slots (slot, media_id, sort) VALUES (?, ?, 10)', [$slot, $mediaId]);
 }
 
+/**
+ * Première modification d'une galerie : ses photos d'origine deviennent des éléments
+ * modifiables un par un (remplacer, déplacer, retirer), au lieu d'être toutes remplacées.
+ */
+function gallery_materialize(string $slot): void
+{
+    ensure_media_schema();
+    $def = media_slots()[$slot] ?? null;
+    if (!$def || $def['type'] !== 'gallery') return;
+    if ((int) q('SELECT COUNT(*) FROM media_slots WHERE slot = ?', [$slot])->fetchColumn() > 0) return;
+    foreach (array_keys($def['defaults']) as $i) {
+        q('INSERT INTO media_slots (slot, media_id, sort, origin) VALUES (?, 0, ?, ?)', [$slot, ($i + 1) * 10, $i]);
+    }
+}
+
+/**
+ * Élément visé dans une galerie : par son identifiant (link) ou, tant que la galerie n'a
+ * jamais été modifiée, par le rang de sa photo d'origine (origin).
+ * @throws InvalidArgumentException si la photo n'appartient pas à cet emplacement
+ */
+function gallery_link(string $slot, int $linkId, ?int $origin): int
+{
+    if ($linkId > 0) {
+        if (!q('SELECT 1 FROM media_slots WHERE id = ? AND slot = ?', [$linkId, $slot])->fetchColumn()) {
+            throw new InvalidArgumentException('Cette photo ne fait plus partie de la galerie : rechargez la page.');
+        }
+        return $linkId;
+    }
+    if ($origin === null) throw new InvalidArgumentException('Photo de galerie non précisée.');
+    gallery_materialize($slot);
+    $id = (int) q('SELECT id FROM media_slots WHERE slot = ? AND origin = ?', [$slot, $origin])->fetchColumn();
+    if (!$id) throw new InvalidArgumentException('Cette photo ne fait plus partie de la galerie : rechargez la page.');
+    return $id;
+}
+
+/** Remplace une seule photo d'une galerie (les autres restent en place). */
+function gallery_replace(int $linkId, int $mediaId): void
+{
+    q('UPDATE media_slots SET media_id = ?, origin = NULL WHERE id = ?', [$mediaId, $linkId]);
+}
+
+/** Ajoute des photos à la fin d'une galerie, en gardant celles déjà présentes (origine comprise). */
 function slot_add(string $slot, array $mediaIds): int
 {
+    gallery_materialize($slot);
     $max = (int) q('SELECT COALESCE(MAX(sort), 0) FROM media_slots WHERE slot = ?', [$slot])->fetchColumn();
-    $already = array_map('intval', q('SELECT media_id FROM media_slots WHERE slot = ?', [$slot])->fetchAll(PDO::FETCH_COLUMN));
+    $already = array_map('intval', q('SELECT media_id FROM media_slots WHERE slot = ? AND media_id > 0', [$slot])->fetchAll(PDO::FETCH_COLUMN));
     $n = 0;
     foreach ($mediaIds as $id) {
         if (in_array($id, $already, true) || !media_get($id)) continue;
@@ -302,13 +360,22 @@ function slot_move(string $slot, int $linkId, int $dir): void
     foreach ($rows as $k => $id) q('UPDATE media_slots SET sort = ? WHERE id = ?', [($k + 1) * 10, $id]);
 }
 
-/** Données publiques pour le site : emplacement → photos (chemins relatifs au dossier gestion/). */
+/**
+ * Données publiques pour le site : emplacement → photos (chemins relatifs au dossier gestion/).
+ * Une photo d'origine gardée dans une galerie est transmise sous la forme {"origin": rang}.
+ */
 function media_public(): array
 {
     ensure_media_schema();
     $out = [];
-    $rows = q('SELECT ms.slot, m.* FROM media_slots ms JOIN media m ON m.id = ms.media_id ORDER BY ms.slot, ms.sort, ms.id')->fetchAll();
+    $rows = q('SELECT ms.slot, ms.origin, m.* FROM media_slots ms LEFT JOIN media m ON m.id = ms.media_id AND ms.media_id > 0
+               WHERE ms.origin IS NOT NULL OR m.id IS NOT NULL
+               ORDER BY ms.slot, ms.sort, ms.id')->fetchAll();
     foreach ($rows as $m) {
+        if ($m['origin'] !== null && $m['id'] === null) {
+            $out[$m['slot']][] = ['origin' => (int) $m['origin']];
+            continue;
+        }
         $out[$m['slot']][] = [
             'src' => media_path($m, 'small'),
             'large' => media_path($m, 'large'),

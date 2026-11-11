@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import Lookbook from "../components/Lookbook";
 import ServiceCard from "../components/ServiceCard";
 import { salonSlug } from "../data/booking";
-import { mediaSrcSet, useGallery, useMedia } from "../data/media";
+import { mediaSrcSet, slotPhoto, useGallery, useMedia } from "../data/media";
 import { realisations } from "../data/photos";
 import { salonLocations } from "../data/salons";
 import { featuredServices } from "../data/services";
@@ -15,7 +15,7 @@ function HomePage() {
   const { t, formatNumber } = useI18n();
   const home = t.home;
   const media = useMedia();
-  const spirit = media["home.spirit"]?.[0];
+  const spirit = slotPhoto(media, "home.spirit");
   const works = useGallery("site.realisations", realisations);
   const highlights = [
     { value: String(salonLocations.length), label: home.highlights.salons },
@@ -138,7 +138,7 @@ function HomePage() {
                     >
                       {location.image && (
                         <img
-                          src={media[`${salonSlug(location)}.hero`]?.[0]?.src ?? asset(location.image)}
+                          src={slotPhoto(media, `${salonSlug(location)}.hero`)?.src ?? asset(location.image)}
                           alt={home.cardAlt(location.name, location.city)}
                           loading="lazy"
                           decoding="async"

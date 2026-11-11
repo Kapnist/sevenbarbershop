@@ -93,35 +93,83 @@ describe("Médiathèque et photos du site", { skip }, () => {
     assert.equal(slots["anatole-france.hero"][0].alt, "Devanture");
   });
 
-  test("galerie : ajout de plusieurs photos, ordre, retrait, retour aux photos d'origine", async () => {
-    const ids = bo.sql("SELECT id FROM media ORDER BY id").map((r) => String(r.id));
-    const form = new URLSearchParams({ action: "slot_add", slot: "meyerbeer.gallery" });
-    // plusieurs valeurs media[] : on passe par la méthode bas niveau
-    const csrf = await owner.csrf("/admin/index.php?p=photos");
-    form.append("csrf", csrf);
+  /** Résumé lisible d'une galerie : « o0 » = photo d'origine n°0, « m12 » = photo 12 de la médiathèque. */
+  const summary = async (slot) =>
+    ((await media())[slot] ?? []).map((it) => ("origin" in it ? `o${it.origin}` : `m${it.src.match(/-([a-f0-9]{6})-640/)[1]}`));
+  const tag = (id) => bo.sql("SELECT base FROM media WHERE id = ?", [id])[0].base.slice(-6);
+
+  test("équipe : changer UNE photo garde les autres photos d'origine à leur place", async () => {
+    const [m1] = bo.sql("SELECT id FROM media ORDER BY id LIMIT 1");
+    // Galerie jamais modifiée : on vise la 2e photo d'origine par son rang
+    const page = await owner.action({ action: "slot_set", slot: "salon.team", origin: "1", "media[]": String(m1.id) }, "photos");
+    assert.match(page, /Photo remplacée dans « L&#039;équipe au travail »|Photo remplacée dans « L'équipe au travail »/);
+    assert.deepEqual(await summary("salon.team"), ["o0", `m${tag(m1.id)}`, "o2", "o3", "o4"]);
+  });
+
+  test("équipe : changer une autre photo, puis remplacer une photo déjà choisie", async () => {
+    const [m1, m2] = bo.sql("SELECT id FROM media ORDER BY id LIMIT 2");
+    const links = bo.sql("SELECT id FROM media_slots WHERE slot = 'salon.team' ORDER BY sort, id");
+    await owner.action({ action: "slot_set", slot: "salon.team", link: String(links[4].id), "media[]": String(m2.id) }, "photos");
+    assert.deepEqual(await summary("salon.team"), ["o0", `m${tag(m1.id)}`, "o2", "o3", `m${tag(m2.id)}`]);
+    await owner.action({ action: "slot_set", slot: "salon.team", link: String(links[1].id), "media[]": String(m2.id) }, "photos");
+    assert.deepEqual(await summary("salon.team"), ["o0", `m${tag(m2.id)}`, "o2", "o3", `m${tag(m2.id)}`]);
+  });
+
+  test("envoyer une nouvelle photo depuis « Changer » : elle remplace seulement cette photo", async () => {
+    const page = await owner.upload({ action: "media_upload", assign_slot: "chavanelle.gallery", origin: "2", alt: "Fauteuils" }, [
+      { name: "fauteuils.jpg", type: "image/jpeg", bytes: makeImage(1400, 1000) },
+    ], "photos");
+    assert.match(page, /placée sur le site/);
+    const m = lastMedia();
+    assert.deepEqual(await summary("chavanelle.gallery"), ["o0", "o1", `m${tag(m.id)}`, "o3", "o4"]);
+  });
+
+  test("galerie : ordre, retrait, ajout à la suite, dernière photo protégée, retour à l'origine", async () => {
+    // Déplacer une photo d'origine d'une galerie jamais modifiée
+    await owner.action({ action: "slot_move", slot: "le-port.gallery", origin: "1", dir: "up" }, "photos");
+    assert.deepEqual(await summary("le-port.gallery"), ["o1", "o0"]);
+
+    // Ajouter des photos : elles s'ajoutent à la suite, sans effacer les photos d'origine
+    const ids = bo.sql("SELECT id FROM media ORDER BY id LIMIT 2").map((r) => String(r.id));
+    const form = new URLSearchParams({ action: "slot_add", slot: "le-port.gallery", csrf: await owner.csrf("/admin/index.php?p=photos") });
     ids.forEach((id) => form.append("media[]", id));
     await owner.request("/admin/index.php?p=photos", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form });
-    let gallery = (await media())["meyerbeer.gallery"];
-    assert.equal(gallery.length, ids.length);
-    const firstSrc = gallery[0].src;
+    assert.deepEqual(await summary("le-port.gallery"), ["o1", "o0", `m${tag(ids[0])}`, `m${tag(ids[1])}`]);
 
-    const links = bo.sql("SELECT id FROM media_slots WHERE slot = 'meyerbeer.gallery' ORDER BY sort, id");
-    await owner.action({ action: "slot_move", slot: "meyerbeer.gallery", link: String(links[1].id), dir: "up" }, "photos");
-    gallery = (await media())["meyerbeer.gallery"];
-    assert.notEqual(gallery[0].src, firstSrc, "la 2e photo est passée en premier");
-    assert.equal(gallery[1].src, firstSrc);
+    // Retirer des photos (d'origine ou non), jusqu'à la dernière, qui est protégée
+    for (let i = 0; i < 3; i++) {
+      const [first] = bo.sql("SELECT id FROM media_slots WHERE slot = 'le-port.gallery' ORDER BY sort, id LIMIT 1");
+      await owner.action({ action: "slot_remove", slot: "le-port.gallery", link: String(first.id) }, "photos");
+    }
+    assert.deepEqual(await summary("le-port.gallery"), [`m${tag(ids[1])}`]);
+    const [last] = bo.sql("SELECT id FROM media_slots WHERE slot = 'le-port.gallery'");
+    const refused = await owner.action({ action: "slot_remove", slot: "le-port.gallery", link: String(last.id) }, "photos");
+    assert.match(refused, /garde au moins une photo/);
+    assert.equal(bo.sql("SELECT COUNT(*) n FROM media")[0].n >= 2, true, "retirer d'une galerie ne supprime pas la photo");
 
-    await owner.action({ action: "slot_remove", slot: "meyerbeer.gallery", link: String(links[0].id) }, "photos");
-    assert.equal((await media())["meyerbeer.gallery"].length, ids.length - 1);
-    assert.equal(bo.sql("SELECT COUNT(*) n FROM media")[0].n, ids.length, "retirer d'une galerie ne supprime pas la photo");
+    // Une photo d'une autre galerie ne peut pas être visée
+    const [foreign] = bo.sql("SELECT id FROM media_slots WHERE slot = 'salon.team' LIMIT 1");
+    const wrong = await owner.action({ action: "slot_remove", slot: "le-port.gallery", link: String(foreign.id) }, "photos");
+    assert.match(wrong, /ne fait plus partie de la galerie/);
 
-    const reset = await owner.action({ action: "slot_reset", slot: "meyerbeer.gallery" }, "photos");
+    const reset = await owner.action({ action: "slot_reset", slot: "le-port.gallery" }, "photos");
     assert.match(reset, /Photo d&#039;origine rétablie|Photo d'origine rétablie/);
-    assert.equal((await media())["meyerbeer.gallery"], undefined);
+    assert.equal((await media())["le-port.gallery"], undefined);
+  });
+
+  test("la page Photos du site propose « Changer » sur chaque photo de chaque galerie", async () => {
+    const { text } = await owner.get("/admin/index.php?p=photos");
+    assert.doesNotMatch(text, PHP_ERRORS);
+    const count = (slot) => (text.match(new RegExp(`data-pick="${slot.replace(".", "\\.")}" data-mode="replace"`, "g")) ?? []).length;
+    assert.equal(count("salon.team"), 5, "5 photos de l'équipe, chacune modifiable");
+    assert.equal(count("site.realisations"), 6);
+    assert.equal(count("meyerbeer.gallery"), 5);
+    assert.match(text, /Galerie personnalisée · 5 photos/);
   });
 
   test("modifier les textes d'une photo (description, titre, légende)", async () => {
-    const m = lastMedia();
+    // La photo placée en tête de la page Anatole France
+    const [m] = bo.sql("SELECT media_id AS id FROM media_slots WHERE slot = 'anatole-france.hero'");
     await owner.action({ action: "media_update", id: String(m.id), alt: "Façade du salon", title: "La devanture", caption: "Rue du 11 Novembre" }, "medias");
     const [row] = bo.sql("SELECT alt, title, caption FROM media WHERE id = ?", [m.id]);
     assert.deepEqual(row, { alt: "Façade du salon", title: "La devanture", caption: "Rue du 11 Novembre" });
@@ -142,8 +190,10 @@ describe("Médiathèque et photos du site", { skip }, () => {
 
     const denied = await manager.action({ action: "slot_set", slot: "home.spirit", "media[]": String(m.id) }, "photos");
     assert.match(denied, /ne pouvez pas modifier cet emplacement/);
-    const ok = await manager.action({ action: "slot_set", slot: "anatole-france.gallery", "media[]": String(m.id) }, "photos");
-    assert.match(ok, /Photo changée/);
+    const ok = await manager.action({ action: "slot_set", slot: "anatole-france.gallery", origin: "0", "media[]": String(m.id) }, "photos");
+    assert.match(ok, /Photo remplacée/);
+    const added = await manager.action({ action: "slot_add", slot: "anatole-france.gallery", "media[]": String(m.id) }, "photos");
+    assert.match(added, /déjà dans la galerie/, "une même photo n'est pas ajoutée deux fois");
     const del = await manager.action({ action: "media_delete", id: String(m.id) }, "medias");
     assert.match(del, /Seul le propriétaire/);
   });

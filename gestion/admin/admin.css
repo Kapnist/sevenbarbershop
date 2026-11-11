@@ -429,3 +429,27 @@ dialog.modal.wide { width: min(920px, calc(100vw - 1.5rem)); max-width: none; }
   .picker-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
   .slot-head { flex-direction: column; }
 }
+
+/* Galeries modifiables photo par photo */
+.slot-thumbs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.thumb-num { position: absolute; top: .4rem; left: .4rem; z-index: 1; min-width: 24px; height: 24px; padding: 0 .4rem; border-radius: 999px; background: rgba(17,27,24,.82); color: #fff; font-size: .75rem; font-weight: 700; display: grid; place-items: center; }
+.thumb-tag { position: absolute; top: .4rem; right: .4rem; z-index: 1; padding: .1rem .45rem; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--ink-soft); font-size: .68rem; font-weight: 600; }
+.slot-thumbs li.is-default img { opacity: 1; }
+.thumb-actions { flex-wrap: wrap; gap: .25rem; padding: .4rem .3rem; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
+.thumb-actions .thumb-change { width: auto; padding: 0 .7rem; border-radius: 999px; background: var(--gold); color: var(--ink); font-size: .78rem; }
+.thumb-actions .thumb-change:hover { background: #d8bd86; }
+@media (hover: hover) and (min-width: 641px) {
+  /* Sur ordinateur, les boutons apparaissent au survol ; sur écran tactile, ils restent visibles */
+  .slot-thumbs li .thumb-actions { opacity: 0; transition: opacity .15s; }
+  .slot-thumbs li:hover .thumb-actions, .slot-thumbs li:focus-within .thumb-actions { opacity: 1; }
+}
+@media (max-width: 640px) {
+  .slot-thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  /* Téléphone : boutons sous la photo, pour la voir en entier */
+  .slot-thumbs li { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); }
+  .slot-thumbs li .thumb-actions { position: static; background: none; padding: .4rem; gap: .3rem; }
+  .thumb-actions button { width: 32px; height: 32px; background: var(--cream); }
+  .thumb-actions .thumb-change { order: -1; flex: 1 0 100%; height: 34px; }
+}

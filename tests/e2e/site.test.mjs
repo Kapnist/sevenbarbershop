@@ -344,6 +344,15 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
     await page.getByRole("button", { name: "Utiliser cette photo" }).click();
     await page.locator(".alert.ok").filter({ hasText: "Photo changée" }).waitFor();
 
+    // 2 bis. Équipe : « Changer » sous la 3e photo seulement
+    await page.locator('[data-pick="salon.team"][data-mode="replace"]').nth(2).click();
+    assert.match(await page.locator("#dlg-pick-title").textContent(), /Remplacer cette photo/);
+    await page.locator("[data-dlg-pick] .picker-item").first().click();
+    await page.getByRole("button", { name: "Utiliser cette photo" }).click();
+    await page.locator(".alert.ok").filter({ hasText: "Photo remplacée" }).waitFor();
+    assert.equal(await page.locator("#slot-salon\\.team .slot-thumbs li").count(), 5);
+    assert.equal(await page.locator("#slot-salon\\.team .thumb-tag").count(), 4, "les 4 autres photos restent d'origine");
+
     // 3. Médiathèque : la photo y figure, utilisée à deux endroits
     await page.goto(`${base}/gestion/admin/index.php?p=medias`);
     assert.match(await page.locator(".media-card").first().textContent(), /Utilisée/);
@@ -363,6 +372,14 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
       await visit.page.waitForFunction(() => document.querySelector(".home-salon-grid img")?.getAttribute("src")?.includes("/gestion/uploads/"));
       await visit.page.waitForFunction(() => document.querySelector(".salon-card img")?.getAttribute("src")?.includes("/gestion/uploads/"));
       if (width === 375) await shot(visit.page, "site-photo-changee-mobile");
+      // Page « Le salon » : seule la 3e photo de l'équipe a changé
+      await visit.page.goto(`${base}/salon`);
+      await visit.page.waitForFunction(() =>
+        [...document.querySelectorAll("#equipe .lookbook-item img")].some((img) => img.getAttribute("src")?.includes("/gestion/uploads/")),
+      );
+      const team = await visit.page.locator("#equipe .lookbook-item img").evaluateAll((imgs) => imgs.map((img) => img.getAttribute("src")));
+      assert.equal(team.length, 5);
+      assert.deepEqual(team.map((src) => src.includes("/gestion/uploads/")), [false, false, true, false, false]);
       assert.deepEqual(visit.errors, []);
       await visit.context.close();
     }

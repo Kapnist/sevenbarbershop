@@ -196,13 +196,17 @@
     document.addEventListener('click', e => {
       const trigger = e.target.closest('[data-pick]');
       if (!trigger) return;
-      const gallery = trigger.dataset.mode === 'gallery';
+      // gallery : ajouter des photos ; replace : changer une seule photo d'une galerie ; single : photo unique
+      const mode = trigger.dataset.mode;
+      const gallery = mode === 'gallery';
       const slot = trigger.dataset.pick;
       $$('[data-pick-slot]', dlgPick).forEach(i => (i.value = slot));
+      $$('[data-pick-link]', dlgPick).forEach(i => (i.value = mode === 'replace' ? trigger.dataset.link || '' : ''));
+      $$('[data-pick-origin]', dlgPick).forEach(i => (i.value = mode === 'replace' ? trigger.dataset.origin || '' : ''));
       $$('[data-pick-back]', dlgPick).forEach(i => (i.value = `index.php?p=photos#slot-${slot}`));
       $('[data-pick-action]', dlgPick).value = gallery ? 'slot_add' : 'slot_set';
       $('[data-pick-label]', dlgPick).textContent = trigger.dataset.label;
-      $('#dlg-pick-title').textContent = gallery ? 'Ajouter des photos à la galerie' : 'Choisir une photo';
+      $('#dlg-pick-title').textContent = gallery ? 'Ajouter des photos à la galerie' : mode === 'replace' ? 'Remplacer cette photo' : 'Choisir une photo';
       $$('[data-pick-input]', dlgPick).forEach(i => { i.type = gallery ? 'checkbox' : 'radio'; i.checked = false; });
       const files = $('[data-pick-files]', dlgPick);
       if (files) { files.multiple = gallery; files.value = ''; files.dispatchEvent(new Event('change')); }

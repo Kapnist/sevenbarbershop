@@ -16,6 +16,13 @@ function post_int(string $key): int
     return (int) ($_POST[$key] ?? 0);
 }
 
+/** Rang d'une photo d'origine dans une galerie (champ « origin »), ou null. */
+function post_origin(): ?int
+{
+    $v = trim((string) ($_POST['origin'] ?? ''));
+    return $v === '' || !ctype_digit($v) ? null : (int) $v;
+}
+
 function require_date(string $key, string $label = 'la date'): string
 {
     $v = post($key);
@@ -481,8 +488,16 @@ function run_admin_action(string $action, array $user, array $salon): void
             }
             $ids = array_map(fn($m) => (int) $m['id'], $stored);
             if ($slot !== '') {
-                if (media_slots()[$slot]['type'] === 'single') slot_set_single($slot, $ids[0]);
-                else slot_add($slot, $ids);
+                $replacing = post_int('link') > 0 || post('origin') !== '';
+                if (media_slots()[$slot]['type'] === 'single') {
+                    slot_set_single($slot, $ids[0]);
+                } elseif ($replacing) {
+                    // « Changer » sur une photo de galerie : seule cette photo est remplacée
+                    gallery_replace(gallery_link($slot, post_int('link'), post_origin()), $ids[0]);
+                    if (count($ids) > 1) slot_add($slot, array_slice($ids, 1));
+                } else {
+                    slot_add($slot, $ids);
+                }
                 flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque et placée' . (count($ids) > 1 ? 's' : '') . ' sur le site : « ' . media_slots()[$slot]['label'] . ' ».');
             } else {
                 flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque.');
@@ -516,7 +531,12 @@ function run_admin_action(string $action, array $user, array $salon): void
             $ids = array_values(array_filter(array_map('intval', (array) ($_POST['media'] ?? []))));
             if (!$ids) throw new InvalidArgumentException('Choisissez au moins une photo.');
             $def = media_slots()[$slot];
-            if ($action === 'slot_set' || $def['type'] === 'single') {
+            if ($def['type'] === 'gallery' && (post_int('link') > 0 || post('origin') !== '')) {
+                // Une seule photo de la galerie est remplacée, les autres restent en place
+                if (!media_get($ids[0])) throw new InvalidArgumentException('Photo introuvable.');
+                gallery_replace(gallery_link($slot, post_int('link'), post_origin()), $ids[0]);
+                flash("Photo remplacée dans « {$def['label']} ».");
+            } elseif ($def['type'] === 'single') {
                 if (!media_get($ids[0])) throw new InvalidArgumentException('Photo introuvable.');
                 slot_set_single($slot, $ids[0]);
                 flash("Photo changée : « {$def['label']} ».");
@@ -531,10 +551,13 @@ function run_admin_action(string $action, array $user, array $salon): void
         case 'slot_move': {
             $slot = post('slot');
             if (!can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
-            $link = post_int('link');
+            $link = gallery_link($slot, post_int('link'), post_origin());
             if ($action === 'slot_remove') {
+                if ((int) q('SELECT COUNT(*) FROM media_slots WHERE slot = ?', [$slot])->fetchColumn() <= 1) {
+                    throw new InvalidArgumentException('Une galerie garde au moins une photo : remplacez-la plutôt avec « Changer ».');
+                }
                 q('DELETE FROM media_slots WHERE id = ? AND slot = ?', [$link, $slot]);
-                flash('Photo retirée de cet emplacement (elle reste dans la médiathèque).');
+                flash('Photo retirée de la galerie (si elle vient de la médiathèque, elle y reste).');
             } else {
                 slot_move($slot, $link, post('dir') === 'up' ? -1 : 1);
             }

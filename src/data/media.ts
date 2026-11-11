@@ -19,7 +19,15 @@ export interface MediaItem {
   caption: string;
 }
 
-type MediaMap = Record<string, MediaItem[]>;
+/** Photo d'origine du site gardée à sa place dans une galerie modifiée (son rang d'origine). */
+export interface OriginItem {
+  origin: number;
+}
+
+type SlotItem = MediaItem | OriginItem;
+type MediaMap = Record<string, SlotItem[]>;
+
+export const isOrigin = (item: SlotItem): item is OriginItem => "origin" in item;
 
 /** Dossier gestion/ sur le serveur (« /gestion »), d'après l'adresse de l'API. */
 const MEDIA_BASE = BOOKING_API ? BOOKING_API.replace(/\/api\/?$/, "") : undefined;
@@ -30,7 +38,8 @@ let current: MediaMap = EMPTY;
 let started = false;
 const listeners = new Set<() => void>();
 
-function absolute(item: MediaItem): MediaItem {
+function absolute(item: SlotItem): SlotItem {
+  if (isOrigin(item)) return item;
   const prefix = (path: string) => (/^(https?:)?\//.test(path) ? path : `${MEDIA_BASE}/${path}`);
   return { ...item, src: prefix(item.src), large: prefix(item.large) };
 }
@@ -52,7 +61,7 @@ function load() {
   }
   fetch(`${MEDIA_BASE}/api/media.php`, { headers: { Accept: "application/json" } })
     .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
-    .then((data: { slots?: Record<string, MediaItem[]> }) => {
+    .then((data: { slots?: Record<string, SlotItem[]> }) => {
       const map: MediaMap = {};
       for (const [slot, items] of Object.entries(data.slots ?? {})) map[slot] = items.map(absolute);
       try {
@@ -80,7 +89,13 @@ export function useMedia(): MediaMap {
 
 /** Photo choisie pour un emplacement simple, ou undefined (photo d'origine). */
 export function useSlotPhoto(slot: string): MediaItem | undefined {
-  return useMedia()[slot]?.[0];
+  return slotPhoto(useMedia(), slot);
+}
+
+/** Première photo choisie d'un emplacement simple (jamais une photo d'origine). */
+export function slotPhoto(media: MediaMap, slot: string): MediaItem | undefined {
+  const item = media[slot]?.[0];
+  return item && !isOrigin(item) ? item : undefined;
 }
 
 export function mediaSrcSet(item: MediaItem): string {
@@ -124,25 +139,32 @@ export function useSalonImages(
   texts: { alt: string; label: string }[],
 ): { hero: SalonImage; gallery: SalonImage[] } {
   const media = useMedia();
-  const customHero = media[`${slug}.hero`]?.[0];
+  const customHero = slotPhoto(media, `${slug}.hero`);
   const customGallery = media[`${slug}.gallery`];
+  const original = (index: number): SalonImage | null =>
+    gallery[index] ? { src: gallery[index], alt: texts[index]?.alt, label: texts[index]?.label } : null;
   return {
     hero: customHero
       ? { src: customHero.large, srcSet: mediaSrcSet(customHero), alt: customHero.alt || undefined }
       : { src: hero },
     gallery: customGallery?.length
-      ? customGallery.map((item) => ({
-          src: item.large,
-          srcSet: mediaSrcSet(item),
-          alt: item.alt || item.title,
-          label: item.title || item.caption,
-        }))
-      : gallery.map((src, index) => ({ src, alt: texts[index]?.alt, label: texts[index]?.label })),
+      ? customGallery
+          .map((item) =>
+            isOrigin(item)
+              ? original(item.origin)
+              : { src: item.large, srcSet: mediaSrcSet(item), alt: item.alt || item.title, label: item.title || item.caption },
+          )
+          .filter((image): image is SalonImage => image !== null)
+      : gallery.map((_, index) => original(index)!),
   };
 }
 
 /** Galerie : photos choisies si l'emplacement en a, sinon photos d'origine. */
 export function useGallery(slot: string, defaults: Photo[]): Photo[] {
   const items = useMedia()[slot];
-  return items?.length ? items.map(mediaToPhoto) : defaults;
+  if (!items?.length) return defaults;
+  // Ordre choisi par l'admin : photos d'origine gardées et photos de la médiathèque mélangées
+  return items
+    .map((item) => (isOrigin(item) ? defaults[item.origin] : mediaToPhoto(item)))
+    .filter((photo): photo is Photo => Boolean(photo));
 }

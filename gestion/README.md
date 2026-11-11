@@ -62,7 +62,7 @@ Sa **page vitrine** (une page `/salons/…` avec photos et texte) est différent
 - **Médiathèque** : glissez-y vos photos, plusieurs à la fois (JPEG, PNG ou WebP). Chacune est redressée si elle vient d'un téléphone, puis réenregistrée en deux tailles optimisées (640 et 1600 px, WebP). Ses métadonnées, comme la position GPS, sont retirées. Une photo très lourde est réduite dans le navigateur avant l'envoi. Pour chaque photo, renseignez la **description** : elle est lue par Google et par les malvoyants.
 - **Photos du site** : chaque emplacement montre la photo actuelle.
   - Le bouton « Changer la photo » permet de choisir dans la médiathèque ou d'envoyer une nouvelle photo, placée directement sur l'emplacement.
-  - Dans une galerie, on peut ajouter, réordonner (← →) et retirer des photos.
+  - Dans une galerie (réalisations, équipe, détails du lieu, galerie de chaque salon), **chaque photo se change une par une** avec son propre bouton « Changer ». Les autres photos, y compris celles d'origine, restent à leur place. On peut aussi déplacer chaque photo (← →), la retirer (✕) ou en ajouter à la suite (« + Ajouter des photos »). Une galerie garde toujours au moins une photo.
   - « Rétablir l'origine » remet la photo prévue dans le code du site.
 - **Emplacements** :
   - accueil : photo « L'esprit Seven » et réalisations ;

@@ -45,7 +45,9 @@ admin_header('Photos du site', 'photos', $user, $salon);
           <h3><?= e($def['label']) ?></h3>
           <p class="muted small"><?= e($def['help']) ?></p>
         </div>
-        <?= $custom ? '<span class="pill ok">Photo' . ($isGallery && count($current) > 1 ? 's' : '') . ' choisie' . ($isGallery && count($current) > 1 ? 's' : '') . '</span>' : '<span class="pill">Photo d\'origine</span>' ?>
+        <?php if (!$custom): ?><span class="pill">Photo<?= $isGallery ? 's' : '' ?> d'origine</span>
+        <?php elseif ($isGallery): ?><span class="pill ok">Galerie personnalisée · <?= count($current) ?> photo<?= count($current) > 1 ? 's' : '' ?></span>
+        <?php else: ?><span class="pill ok">Photo choisie</span><?php endif; ?>
       </div>
 
       <?php if (!$isGallery): ?>
@@ -54,26 +56,42 @@ admin_header('Photos du site', 'photos', $user, $salon);
           <?php if ($src): ?><img src="<?= e($custom ? $src : $siteRoot . ltrim($src, '/')) ?>" alt="" loading="lazy"><?php else: ?><span class="muted">Aucune photo</span><?php endif; ?>
         </div>
       <?php else: ?>
+        <?php
+          // Chaque photo de la galerie, d'origine ou choisie, se modifie une par une.
+          $items = $custom
+              ? array_map(fn($m) => $m['origin'] !== null && $m['link_media'] == 0
+                  ? ['link' => (int) $m['link_id'], 'origin' => (int) $m['origin'], 'src' => $siteRoot . ltrim($def['defaults'][(int) $m['origin']] ?? '', '/'), 'alt' => '']
+                  : ['link' => (int) $m['link_id'], 'origin' => null, 'src' => '../' . media_path($m), 'alt' => $m['alt']], $current)
+              : array_map(fn($src, $i) => ['link' => 0, 'origin' => $i, 'src' => $siteRoot . ltrim($src, '/'), 'alt' => ''], $def['defaults'], array_keys($def['defaults']));
+          $n = count($items);
+        ?>
         <ol class="slot-thumbs">
-          <?php if ($custom): foreach ($current as $i => $m): ?>
-            <li>
-              <img src="<?= e('../' . media_path($m)) ?>" alt="<?= e($m['alt']) ?>" loading="lazy">
+          <?php foreach ($items as $i => $it):
+              $target = '<input type="hidden" name="slot" value="' . e($key) . '"><input type="hidden" name="link" value="' . $it['link'] . '"><input type="hidden" name="origin" value="' . ($it['link'] ? '' : $it['origin']) . '"><input type="hidden" name="back" value="' . e($back . '#slot-' . $key) . '">'; ?>
+            <li class="<?= $it['origin'] !== null ? 'is-default' : '' ?>">
+              <span class="thumb-num"><?= $i + 1 ?></span>
+              <?php if ($it['origin'] !== null): ?><span class="thumb-tag">Origine</span><?php endif; ?>
+              <img src="<?= e($it['src']) ?>" alt="<?= e($it['alt']) ?>" loading="lazy">
               <div class="thumb-actions">
-                <?php foreach (['up' => ['←', 'Avancer', $i > 0], 'down' => ['→', 'Reculer', $i < count($current) - 1]] as $dir => [$sym, $lbl, $show]): if (!$show) continue; ?>
-                  <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="action" value="slot_move"><input type="hidden" name="slot" value="<?= e($key) ?>"><input type="hidden" name="link" value="<?= (int) $m['link_id'] ?>"><input type="hidden" name="dir" value="<?= $dir ?>"><input type="hidden" name="back" value="<?= e($back . '#slot-' . $key) ?>"><button type="submit" title="<?= $lbl ?>" aria-label="<?= $lbl ?>"><?= $sym ?></button></form>
-                <?php endforeach; ?>
-                <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="action" value="slot_remove"><input type="hidden" name="slot" value="<?= e($key) ?>"><input type="hidden" name="link" value="<?= (int) $m['link_id'] ?>"><input type="hidden" name="back" value="<?= e($back . '#slot-' . $key) ?>"><button type="submit" title="Retirer de la galerie" aria-label="Retirer de la galerie">✕</button></form>
+                <?php if ($i > 0): ?>
+                  <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="action" value="slot_move"><input type="hidden" name="dir" value="up"><?= $target ?><button type="submit" title="Avancer" aria-label="Avancer la photo <?= $i + 1 ?>">←</button></form>
+                <?php endif; ?>
+                <button type="button" class="thumb-change" data-pick="<?= e($key) ?>" data-mode="replace" data-link="<?= $it['link'] ?>" data-origin="<?= $it['link'] ? '' : $it['origin'] ?>" data-label="<?= e($def['label'] . ' · photo ' . ($i + 1)) ?>" title="Changer cette photo">Changer</button>
+                <?php if ($i < $n - 1): ?>
+                  <form method="post" class="inline"><?= csrf_field() ?><input type="hidden" name="action" value="slot_move"><input type="hidden" name="dir" value="down"><?= $target ?><button type="submit" title="Reculer" aria-label="Reculer la photo <?= $i + 1 ?>">→</button></form>
+                <?php endif; ?>
+                <?php if ($n > 1): ?>
+                  <form method="post" class="inline" data-confirm="Retirer la photo <?= $i + 1 ?> de la galerie ?"><?= csrf_field() ?><input type="hidden" name="action" value="slot_remove"><?= $target ?><button type="submit" title="Retirer de la galerie" aria-label="Retirer la photo <?= $i + 1 ?>">✕</button></form>
+                <?php endif; ?>
               </div>
             </li>
-          <?php endforeach; else: foreach ($def['defaults'] as $src): ?>
-            <li class="is-default"><img src="<?= e($siteRoot . ltrim($src, '/')) ?>" alt="" loading="lazy"></li>
-          <?php endforeach; endif; ?>
+          <?php endforeach; ?>
         </ol>
       <?php endif; ?>
 
       <div class="slot-actions">
         <button class="btn small" type="button" data-pick="<?= e($key) ?>" data-mode="<?= $isGallery ? 'gallery' : 'single' ?>" data-label="<?= e($def['label']) ?>">
-          <?= $isGallery ? ($custom ? '+ Ajouter des photos' : 'Remplacer par mes photos') : 'Changer la photo' ?>
+          <?= $isGallery ? '+ Ajouter des photos' : 'Changer la photo' ?>
         </button>
         <?php if ($custom): ?>
           <form method="post" class="inline" data-confirm="Revenir <?= $isGallery ? 'aux photos' : 'à la photo' ?> d'origine pour « <?= e($def['label']) ?> » ?">
@@ -98,7 +116,7 @@ admin_header('Photos du site', 'photos', $user, $salon);
     <button type="button" role="tab" aria-selected="false" data-seg="upload">Envoyer de nouvelles photos</button>
   </div>
   <form method="post" class="stack" data-seg-panel="library" data-pick-form>
-    <?= csrf_field() ?><input type="hidden" name="action" value="slot_set" data-pick-action><input type="hidden" name="slot" data-pick-slot><input type="hidden" name="back" value="<?= e($back) ?>" data-pick-back>
+    <?= csrf_field() ?><input type="hidden" name="action" value="slot_set" data-pick-action><input type="hidden" name="slot" data-pick-slot><input type="hidden" name="link" data-pick-link><input type="hidden" name="origin" data-pick-origin><input type="hidden" name="back" value="<?= e($back) ?>" data-pick-back>
     <?php if (!$library): ?>
       <div class="empty-box">La médiathèque est vide : envoyez vos photos avec l'onglet « Envoyer de nouvelles photos ».</div>
     <?php else: ?>
@@ -114,7 +132,7 @@ admin_header('Photos du site', 'photos', $user, $salon);
     <?php endif; ?>
   </form>
   <form method="post" enctype="multipart/form-data" class="stack" data-seg-panel="upload" data-upload hidden>
-    <?= csrf_field() ?><input type="hidden" name="action" value="media_upload"><input type="hidden" name="assign_slot" data-pick-slot><input type="hidden" name="back" value="<?= e($back) ?>" data-pick-back>
+    <?= csrf_field() ?><input type="hidden" name="action" value="media_upload"><input type="hidden" name="assign_slot" data-pick-slot><input type="hidden" name="link" data-pick-link><input type="hidden" name="origin" data-pick-origin><input type="hidden" name="back" value="<?= e($back) ?>" data-pick-back>
     <label class="drop" data-drop>
       <span class="drop-icon" aria-hidden="true">⇪</span>
       <b>Glissez vos photos ici ou cliquez pour les choisir</b>
