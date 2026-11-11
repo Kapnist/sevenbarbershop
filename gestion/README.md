@@ -9,8 +9,11 @@ Le dossier `gestion/` contient la réservation en ligne et l'espace gérant. Il 
   - les horaires et les fermetures de chaque salon ;
   - les prestations et les prix ;
   - la liste des rendez-vous, exportable en Excel ;
+  - le **fichier clients** : visites, absences, consentement aux relances, export, effacement ;
+  - les **statistiques** : rendez-vous, chiffre d'affaires estimé, remplissage, absences, barbiers, prestations, jours et heures de pointe, comparaison des salons (propriétaire) ;
   - les salons ;
   - les accès gérants.
+- **Annulation en ligne** : après sa réservation, le client reçoit un lien signé (à l'écran et dans l'e-mail de confirmation). Il peut annuler lui-même jusqu'au délai de prévenance du salon (*Horaires & réservation*). Le créneau est libéré et le salon reçoit un e-mail.
 
 ## Accès
 
@@ -53,16 +56,28 @@ Sa **page vitrine** (une page `/salons/…` avec photos et texte) est différent
 
 Chaque réservation crée ou met à jour une fiche client (nom, téléphone, e-mail). La case « J'accepte que Seven Barbershop me contacte… » enregistre le consentement et sa date. Seuls ces clients pourront être relancés, comme l'exige la loi française (CNIL).
 
+Dans *Clients*, le filtre « Relances acceptées » et l'export Excel donnent la liste des clients qu'on a le droit de relancer. Retirez le consentement dès qu'un client le demande. Le propriétaire peut aussi **effacer** un client : ses coordonnées sont retirées de tous ses rendez-vous, mais les statistiques restent justes.
+
+## E-mails
+
+Les e-mails partent de `noreply@<votre domaine>`, comme OVH l'exige. Pour utiliser une autre adresse du domaine, ajoutez `'mail_from' => 'contact@sevenbarbershop.fr'` dans `config.php`. Les liens d'annulation utilisent l'adresse du site (`site_url` dans `config.php`, sinon le domaine de la requête).
+
 ## Pour les développeurs
 
 - **API publique** (JSON) :
   - `api/catalog.php` donne les salons, les prestations et les barbiers ;
   - `api/days.php` et `api/slots.php` donnent les jours et les créneaux libres ;
-  - `api/book.php` (POST) crée la réservation.
+  - `api/book.php` (POST) crée la réservation et renvoie le jeton d'annulation ;
+  - `api/cancel.php` (GET : détail, POST : annulation) avec `ref` et le jeton `t`.
 - **Appel depuis un autre domaine** : un site sur un autre domaine (par exemple la version de test sur GitHub Pages) doit figurer dans `config.php`, rubrique `allowed_origins`.
-- **Site React** : `VITE_BOOKING_API` (dans `.env.production`) donne l'adresse de l'API. Sans cette variable, le site reste sur Planity.
+- **Site React** : l'API est appelée sur `/gestion/api` (même domaine). `VITE_BOOKING_API` (dans `.env.production`) permet de viser un autre domaine. Si l'API ne répond pas, les boutons « Réserver » restent sur Planity.
+- **Compilation** : `npm run build` copie `gestion/` dans `dist/gestion/` (sans `config.php` ni la base de test, via `scripts/copy-gestion.mjs`).
 - **Données de départ** : `inc/seed.json` est généré à partir des données du site avec `npm run seed`.
-- **Test en local** : lancez `php -S localhost:8000` dans `gestion/`, ouvrez `install.php`, puis choisissez SQLite.
+- **Test en local** : `npm run php` lance le serveur PHP sur le port 8000, puis `npm run dev`. Vite relaie `/gestion` vers PHP. Ouvrez `http://localhost:5173/gestion/install.php` et choisissez SQLite.
+- **Tests automatiques** :
+  - `npm test` : tests d'intégration de l'API et de l'espace gérant, sur un vrai serveur PHP avec une base SQLite jetable ;
+  - `npm run test:e2e` : parcours de réservation dans Chrome, annulation, et contrôle responsive de toutes les pages de 320 à 1440 px (site et espace gérant) ;
+  - PHP doit être dans le PATH, ou indiqué par `PHP_BIN=C:\chemin\php.exe`.
 - **Sécurité** :
   - mots de passe hachés, connexion bloquée après 5 essais ratés ;
   - jeton anti-CSRF et requêtes SQL préparées ;

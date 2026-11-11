@@ -6,6 +6,7 @@ import { salonPages } from "./data/salonPages";
 import { useI18n } from "./i18n";
 import AboutPage from "./pages/AboutPage";
 import BookingPage from "./pages/BookingPage";
+import CancelBookingPage from "./pages/CancelBookingPage";
 import CareersPage from "./pages/CareersPage";
 import ChavanellePage from "./pages/ChavanellePage";
 import ContactPage from "./pages/ContactPage";
@@ -79,6 +80,7 @@ function App() {
           <Route path="carrieres" element={<CareersPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="reservation" element={<BookingPage />} />
+          <Route path="reservation/annuler" element={<CancelBookingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

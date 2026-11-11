@@ -8,7 +8,11 @@
     "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/copy-gestion.mjs",
     "seed": "esbuild scripts/export-seed.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/export-seed.mjs --log-level=warning && node node_modules/.tmp/export-seed.mjs",
     "build:github": "tsc -b && vite build --mode github && vite build --mode github --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "php": "php -S localhost:8000 -t gestion",
+    "test": "node --test \"tests/integration/*.test.mjs\"",
+    "test:e2e": "npm run build && node --test \"tests/e2e/*.test.mjs\"",
+    "test:all": "npm test && npm run test:e2e"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -19,6 +23,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "playwright": "^1.56.1",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   }

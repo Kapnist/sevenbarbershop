@@ -312,12 +312,18 @@ function create_appointment(array $salon, array $service, string $date, string $
     });
 }
 
-/** Alerte e-mail au salon (adresse du salon, sinon adresse générale) pour une réservation en ligne. */
-function notify_new_booking(array $salon, array $appt, array $service, array $client): void
+/** Adresse qui reçoit les alertes d'un salon (celle du salon, sinon l'adresse générale). */
+function salon_notify_email(array $salon): string
 {
     $to = $salon['notify_email'] ?: setting('notify_email');
-    if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL)) return;
-    $subject = '=?UTF-8?B?' . base64_encode("Nouveau rendez-vous · {$salon['name']} · " . service_label($service)) . '?=';
+    return filter_var($to, FILTER_VALIDATE_EMAIL) ? $to : '';
+}
+
+/** Alerte e-mail au salon pour une réservation en ligne. */
+function notify_new_booking(array $salon, array $appt, array $service, array $client): void
+{
+    $to = salon_notify_email($salon);
+    if (!$to) return;
     $body = "Nouveau rendez-vous pris sur le site :\n\n"
         . "Salon : {$salon['name']} ({$salon['city']})\n"
         . 'Prestation : ' . service_label($service) . ' (' . fmt_duration((int) $service['duration_min']) . ")\n"
@@ -327,26 +333,62 @@ function notify_new_booking(array $salon, array $appt, array $service, array $cl
         . ($client['email'] ? "E-mail : {$client['email']}\n" : '')
         . ($client['note'] ? "Précisions : {$client['note']}\n" : '')
         . "Référence : {$appt['ref']}\n";
-    $headers = "Content-Type: text/plain; charset=UTF-8\r\n";
-    if ($client['email']) $headers .= 'Reply-To: ' . $client['email'] . "\r\n";
-    @mail($to, $subject, $body, $headers);
+    send_mail($to, "Nouveau rendez-vous · {$salon['name']} · " . service_label($service), $body, (string) $client['email']);
 }
 
-/** Confirmation envoyée au client s'il a donné son e-mail. */
+/** Confirmation envoyée au client s'il a donné son e-mail, avec le lien d'annulation. */
 function notify_client(array $salon, array $appt, array $service, array $client): void
 {
     if (!$client['email'] || !filter_var($client['email'], FILTER_VALIDATE_EMAIL)) return;
     $brand = setting('brand_name', 'Seven Barbershop');
-    $subject = '=?UTF-8?B?' . base64_encode("Votre rendez-vous chez $brand {$salon['name']}") . '?=';
     $when = fmt_date_fr($appt['start']->format('Y-m-d'), true) . ' à ' . fmt_hour($appt['start']->format('H:i'));
+    $notice = (int) $salon['booking_min_notice_h'];
     $body = "Bonjour {$client['name']},\n\n"
         . "Votre rendez-vous est confirmé :\n\n"
         . service_label($service) . "\n"
         . ucfirst($when) . "\n"
         . ($appt['staff_name'] ? "Avec {$appt['staff_name']}\n" : '')
         . "$brand {$salon['name']}, {$salon['address']}, {$salon['postcode']} {$salon['city']}\n\n"
-        . "Référence : {$appt['ref']}\n"
-        . "Pour annuler ou déplacer votre rendez-vous, contactez le salon en indiquant cette référence.\n\n"
+        . "Référence : {$appt['ref']}\n\n"
+        . "Un empêchement ? Annulez en un clic" . ($notice > 0 ? " (jusqu'à {$notice} h avant)" : '') . " :\n"
+        . cancel_url($appt['ref']) . "\n\n"
+        . "Paiement sur place, au salon.\n\n"
         . "À bientôt,\n$brand\n";
-    @mail($client['email'], $subject, $body, "Content-Type: text/plain; charset=UTF-8\r\n");
+    send_mail($client['email'], "Votre rendez-vous chez $brand {$salon['name']}", $body, salon_notify_email($salon));
+}
+
+/* ---------- Annulation en ligne par le client ---------- */
+
+/** Rendez-vous retrouvé par sa référence, avec le nom du barbier. */
+function appointment_by_ref(string $ref): ?array
+{
+    if (!preg_match('/^[A-Z0-9]{4,12}$/', $ref)) return null;
+    return q('SELECT a.*, s.name AS staff_name FROM appointments a LEFT JOIN staff s ON s.id = a.staff_id WHERE a.ref = ?', [$ref])->fetch() ?: null;
+}
+
+/** Le client peut-il encore annuler en ligne ? (rendez-vous confirmé, à venir, délai du salon respecté) */
+function client_can_cancel(array $appt, array $salon): bool
+{
+    if ($appt['status'] !== 'confirmed') return false;
+    $limit = now()->modify('+' . max(0, (int) $salon['booking_min_notice_h']) . ' hours')->format('Y-m-d H:i:s');
+    return $appt['start_at'] > $limit;
+}
+
+/** Annule le rendez-vous à la demande du client et prévient le salon. */
+function cancel_by_client(array $appt, array $salon): void
+{
+    $stamp = 'Annulé en ligne par le client le ' . now()->format('d/m/Y à H:i') . '.';
+    $note = trim($appt['admin_note'] . "\n" . $stamp);
+    q("UPDATE appointments SET status = 'cancelled', admin_note = ? WHERE id = ? AND status = 'confirmed'", [$note, $appt['id']]);
+    $to = salon_notify_email($salon);
+    if ($to) {
+        $body = "Un client a annulé son rendez-vous depuis le lien reçu :\n\n"
+            . "Salon : {$salon['name']}\n"
+            . "Prestation : {$appt['service_name']}\n"
+            . 'Date : ' . fmt_date_fr(substr($appt['start_at'], 0, 10), true) . ' à ' . substr($appt['start_at'], 11, 5) . "\n"
+            . ($appt['staff_name'] ? "Avec : {$appt['staff_name']}\n" : '')
+            . "Client : {$appt['client_name']} ({$appt['client_phone']})\n"
+            . "Référence : {$appt['ref']}\n\nLe créneau est de nouveau réservable.\n";
+        send_mail($to, "Annulation · {$salon['name']} · {$appt['client_name']}", $body);
+    }
 }

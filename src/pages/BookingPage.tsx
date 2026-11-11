@@ -13,6 +13,7 @@ import {
   BOOKING_API,
   BookingError,
   book,
+  calendarFileUrl,
   fetchCatalog,
   fetchDays,
   fetchSlots,
@@ -200,7 +201,7 @@ function BookingPage() {
         consent: data.get("consent") === "on",
         website: String(data.get("website") ?? ""),
       });
-      setConfirmation(result);
+      setConfirmation({ duration: service.duration, ...result });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       if (error instanceof BookingError && error.status === 409) {
@@ -298,14 +299,36 @@ function BookingPage() {
                   </dd>
                 </div>
               </dl>
-              <p className="booking-note">{page.cancelNote}</p>
-              <button
-                type="button"
-                className="button button-outline"
-                onClick={restart}
-              >
-                {page.another}
-              </button>
+              <div className="booking-confirmation-actions">
+                <a
+                  className="button"
+                  href={calendarFileUrl(confirmation)}
+                  download={`seven-barbershop-${confirmation.ref}.ics`}
+                >
+                  {page.addToCalendar}
+                </a>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={restart}
+                >
+                  {page.another}
+                </button>
+              </div>
+              <p className="booking-note">
+                {page.cancelNote}
+                {confirmation.token && (
+                  <>
+                    {" "}
+                    <Link
+                      className="text-link"
+                      to={`/reservation/annuler?ref=${encodeURIComponent(confirmation.ref)}&t=${encodeURIComponent(confirmation.token)}`}
+                    >
+                      {page.cancelLink}
+                    </Link>
+                  </>
+                )}
+              </p>
             </div>
           </div>
         </section>

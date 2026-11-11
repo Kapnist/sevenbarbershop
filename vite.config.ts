@@ -226,8 +226,20 @@ export default defineConfig(async ({ mode }) => {
     },
   };
 
+  // En local, /gestion est relayé vers le serveur PHP (npm run php) : npm run dev et npm run preview
+  // affichent ainsi la réservation et l'espace gérant comme sur l'hébergement.
+  const phpProxy = {
+    "/gestion": {
+      target: loadEnv(mode, ".", "PHP_").PHP_DEV_SERVER || "http://localhost:8000",
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(/^\/gestion/, ""),
+    },
+  };
+
   return {
     base: mode === "github" ? "/sevenbarbershop/" : "/",
     plugins: [react(), securityHeaders(seo), seoPages(seo), chatbotInfo],
+    server: { proxy: phpProxy },
+    preview: { proxy: phpProxy },
   };
 });

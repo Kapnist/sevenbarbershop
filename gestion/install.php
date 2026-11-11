@@ -60,6 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'db_pass' => $pass,
                 // Sites autorisés à appeler l'API de réservation depuis un autre domaine
                 'allowed_origins' => $origins,
+                // Signe les liens d'annulation envoyés aux clients : ne pas modifier après la mise en ligne
+                'app_secret' => bin2hex(random_bytes(32)),
+                // Adresse publique du site, utilisée dans les e-mails (vide : domaine de la requête)
+                'site_url' => '',
             ], true) . ";\n";
             file_put_contents(CONFIG_FILE, $cfg, LOCK_EX);
             @chmod(CONFIG_FILE, 0640);

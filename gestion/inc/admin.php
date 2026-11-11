@@ -9,6 +9,8 @@ require_once __DIR__ . '/booking.php';
 const ADMIN_NAV = [
     'agenda' => ['Agenda', 'M3 5h18M3 10h18M7 3v4m10-4v4M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z'],
     'rdv' => ['Rendez-vous', 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01'],
+    'clients' => ['Clients', 'M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm11 10v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
+    'stats' => ['Statistiques', 'M3 3v18h18M7 15l4-4 3 3 5-6'],
     'equipe' => ['Barbiers', 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1m18 0v-1a4 4 0 0 0-3-3.9M15 3.1a4 4 0 0 1 0 7.8M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
     'planning' => ['Horaires & réservation', 'M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
     'prestations' => ['Prestations & prix', 'M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm2.1-8.1L20 18M20 6 8.1 17.1'],
@@ -143,7 +145,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=3">
+<link rel="stylesheet" href="admin.css?v=4">
 </head>
 <body class="admin">
 <header class="topbar">
@@ -193,7 +195,7 @@ function admin_footer(): void
 {
     ?>
 </main>
-<script src="admin.js?v=3" defer></script>
+<script src="admin.js?v=4" defer></script>
 </body>
 </html>
 <?php

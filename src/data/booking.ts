@@ -56,6 +56,21 @@ export interface BookingConfirmation {
   staff: string;
   date: string;
   time: string;
+  duration?: number;
+  /** Jeton d'annulation en ligne (lien envoyé au client). */
+  token?: string;
+}
+
+export interface CancelInfo {
+  ref: string;
+  salon: string;
+  address: string;
+  service: string;
+  staff: string;
+  date: string;
+  time: string;
+  status: string;
+  cancellable: boolean;
 }
 
 export class BookingError extends Error {
@@ -139,6 +154,47 @@ export function book(request: BookingRequest) {
     method: "POST",
     body: JSON.stringify(request),
   });
+}
+
+export function fetchCancelInfo(ref: string, token: string) {
+  const params = new URLSearchParams({ ref, t: token });
+  return call<CancelInfo>(`cancel.php?${params}`);
+}
+
+export function cancelBooking(ref: string, token: string) {
+  return call<{ ok: true }>("cancel.php", {
+    method: "POST",
+    body: JSON.stringify({ ref, t: token }),
+  });
+}
+
+/** Fichier .ics pour ajouter le rendez-vous à l'agenda du téléphone. */
+export function calendarFileUrl(confirmation: BookingConfirmation): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const [y, mo, d] = confirmation.date.split("-").map(Number);
+  const [h, mi] = confirmation.time.split(":").map(Number);
+  // Calcul en UTC pour rester indépendant du fuseau du visiteur (l'heure est celle de Paris).
+  const start = new Date(Date.UTC(y, mo - 1, d, h, mi));
+  const end = new Date(start.getTime() + (confirmation.duration ?? 30) * 60000);
+  const stamp = (t: Date) =>
+    `${t.getUTCFullYear()}${pad(t.getUTCMonth() + 1)}${pad(t.getUTCDate())}T${pad(t.getUTCHours())}${pad(t.getUTCMinutes())}00`;
+  const escape = (s: string) => s.replace(/([,;\\])/g, "\\$1");
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Seven Barbershop//Reservation//FR",
+    "BEGIN:VEVENT",
+    `UID:${confirmation.ref}@sevenbarbershop`,
+    `DTSTAMP:${stamp(new Date())}Z`,
+    `DTSTART;TZID=Europe/Paris:${stamp(start)}`,
+    `DTEND;TZID=Europe/Paris:${stamp(end)}`,
+    `SUMMARY:${escape(`Seven Barbershop · ${confirmation.service}`)}`,
+    `LOCATION:${escape(`Seven Barbershop ${confirmation.salon}, ${confirmation.address}`)}`,
+    `DESCRIPTION:${escape(`Référence ${confirmation.ref}${confirmation.staff ? ` · avec ${confirmation.staff}` : ""}`)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(lines.join("\r\n"))}`;
 }
 
 /** Identifiant d'un salon dans l'API : la fin de l'adresse de sa page (« anatole-france »). */

@@ -54,4 +54,6 @@ json_out([
     'staff' => $appt['staff_name'],
     'date' => $date,
     'time' => $time,
+    'duration' => (int) $service['duration_min'],
+    'token' => cancel_token($appt['ref']),
 ]);

@@ -314,3 +314,64 @@ code { background: var(--cream); padding: .1rem .35rem; border-radius: 5px; font
   .topbar .brand-name, .topbar-site { display: none; }
   .salon-switch { margin-left: auto; }
 }
+
+/* Statistiques */
+.stats-periods { margin-bottom: 1.2rem; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: .8rem; margin-bottom: .6rem; }
+.kpi { display: flex; flex-direction: column; gap: .2rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.kpi span { color: var(--ink-soft); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.kpi b { font-size: 1.75rem; line-height: 1.15; }
+.kpi small { color: var(--ink-soft); }
+.kpi.is-alert { border-color: #f2c4bf; background: #fdf3f2; }
+.kpi.is-alert b { color: var(--red); }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 1rem; margin-top: 1rem; }
+.stats-grid .panel { margin: 0; }
+.stats-grid h2, .panel > h2 { margin-bottom: .9rem; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.bars li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) 2.2rem; align-items: center; gap: .6rem; font-size: .88rem; }
+.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar { display: block; height: 10px; border-radius: 999px; background: var(--cream); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: inherit; background: var(--moss); }
+.bars b { text-align: right; }
+.columns-chart { display: flex; align-items: flex-end; gap: .35rem; height: 170px; padding-top: .4rem; overflow-x: auto; }
+.columns-chart .col { flex: 1 0 28px; display: flex; flex-direction: column; align-items: center; gap: .25rem; height: 100%; font-size: .75rem; color: var(--ink-soft); }
+.columns-chart .col b { color: var(--ink); font-size: .78rem; }
+.col-bar { flex: 1; width: 100%; max-width: 38px; display: flex; align-items: flex-end; background: var(--cream); border-radius: 8px 8px 3px 3px; overflow: hidden; }
+.col-bar i { display: block; width: 100%; background: var(--gold); border-radius: 8px 8px 0 0; min-height: 2px; }
+
+/* Tableaux (statistiques, clients) */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.panel.flush { padding: 0; }
+.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.table th { text-align: left; font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 600; padding: .7rem .8rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.table td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table tr:last-child td { border-bottom: 0; }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table tr.is-current td { background: #faf6ee; }
+.table .right-cell { text-align: right; white-space: nowrap; }
+.table .right-cell form { margin-left: .6rem; }
+@media (max-width: 720px) {
+  /* Fichier clients : une carte par client sur mobile */
+  .clients-table thead { display: none; }
+  .clients-table, .clients-table tbody, .clients-table tr, .clients-table td { display: block; width: 100%; }
+  .clients-table tr { padding: .8rem 1rem; border-bottom: 1px solid var(--line); }
+  .clients-table td { border: 0; padding: .2rem 0; text-align: left; }
+  .clients-table td.num { text-align: left; }
+  .clients-table td[data-label]:not([data-label="Client"])::before { content: attr(data-label) " : "; color: var(--ink-soft); font-size: .8rem; }
+  .clients-table .right-cell { text-align: left; padding-top: .5rem; }
+  .clients-table .right-cell form { margin-left: .8rem; }
+}
+@media (max-width: 640px) {
+  .agenda-head, .agenda-body { grid-template-columns: 44px repeat(var(--cols), minmax(128px, 1fr)); min-width: calc(44px + var(--cols) * 128px); }
+  .agenda { max-height: calc(100vh - 230px); }
+  .page-head h1 { font-size: 1.35rem; }
+  .head-actions { width: 100%; }
+  .head-actions .btn:last-child { margin-left: auto; }
+}
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .kpi { padding: .8rem; }
+  .kpi b { font-size: 1.4rem; }
+  .kpi span { font-size: .7rem; }
+  .table td:first-child { min-width: 130px; }
+}

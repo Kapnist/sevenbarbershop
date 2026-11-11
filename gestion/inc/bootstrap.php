@@ -182,6 +182,67 @@ const CATEGORIES = [
 /** Couleurs des colonnes des barbiers dans l'agenda. */
 const STAFF_PALETTE = ['#c8a96e', '#5f8f75', '#8c6bb1', '#4f7cac', '#b5546f', '#d08a3c', '#3f9a8e'];
 
+/* ---------- Liens signés & e-mails ---------- */
+
+/**
+ * Clé secrète du serveur. Les installations récentes l'ont dans config.php (app_secret) ;
+ * sinon elle est dérivée des identifiants de la base, qui ne quittent jamais le serveur.
+ */
+function app_secret(): string
+{
+    $secret = (string) (config('app_secret') ?? '');
+    if ($secret !== '') return $secret;
+    return hash('sha256', 'seven|' . config('db_dsn') . '|' . config('db_user') . '|' . config('db_pass') . '|' . CONFIG_FILE);
+}
+
+/** Jeton d'annulation en ligne d'un rendez-vous (lien envoyé au client). */
+function cancel_token(string $ref): string
+{
+    return substr(hash_hmac('sha256', 'cancel|' . $ref, app_secret()), 0, 32);
+}
+
+function cancel_token_valid(string $ref, string $token): bool
+{
+    return $ref !== '' && $token !== '' && hash_equals(cancel_token($ref), $token);
+}
+
+/** Adresse publique du site (config.php → site_url, sinon le domaine de la requête). */
+function site_url(): string
+{
+    $configured = rtrim((string) (config('site_url') ?? ''), '/');
+    if ($configured !== '') return $configured;
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $host = preg_replace('/[^a-z0-9.\-:]/i', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    return ($https ? 'https' : 'http') . '://' . $host;
+}
+
+/** Lien d'annulation à donner au client. */
+function cancel_url(string $ref): string
+{
+    return site_url() . '/reservation/annuler?' . http_build_query(['ref' => $ref, 't' => cancel_token($ref)]);
+}
+
+/**
+ * Envoie un e-mail texte. OVH exige un expéditeur du domaine hébergé :
+ * on utilise noreply@<domaine> (ou config.php → mail_from).
+ */
+function send_mail(string $to, string $subject, string $body, string $replyTo = ''): bool
+{
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+    $host = preg_replace('/^www\./', '', (string) parse_url(site_url(), PHP_URL_HOST));
+    $from = (string) (config('mail_from') ?? '') ?: 'noreply@' . ($host ?: 'localhost');
+    $brand = setting('brand_name', 'Seven Barbershop');
+    $headers = 'From: =?UTF-8?B?' . base64_encode($brand) . "?= <$from>\r\n"
+        . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n";
+    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) $headers .= "Reply-To: $replyTo\r\n";
+    // Mode test : les e-mails sont écrits dans data/mails.log au lieu d'être envoyés.
+    if (config('mail_log')) {
+        @file_put_contents(ROOT . '/data/mails.log', "To: $to\nSubject: $subject\n\n$body\n-----\n", FILE_APPEND | LOCK_EX);
+        return true;
+    }
+    return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers, '-f' . $from);
+}
+
 /* ---------- Session & sécurité ---------- */
 
 function start_session(): void

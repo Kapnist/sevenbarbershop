@@ -453,6 +453,30 @@ function run_admin_action(string $action, array $user, array $salon): void
             break;
         }
 
+        /* ---------- Fichier clients ---------- */
+        case 'client_consent': {
+            $id = post_int('id');
+            // Un responsable ne touche qu'aux clients venus dans son salon
+            if (!q('SELECT 1 FROM appointments WHERE client_id = ? AND salon_id = ?', [$id, $salonId])->fetchColumn()) {
+                throw new InvalidArgumentException('Client introuvable.');
+            }
+            $on = post('consent') === '1';
+            q('UPDATE clients SET marketing_consent = ?, consent_at = ? WHERE id = ?', [$on ? 1 : 0, $on ? now()->format('Y-m-d H:i:s') : null, $id]);
+            flash($on ? 'Consentement aux relances enregistré.' : 'Consentement retiré : ce client ne sera plus relancé.');
+            break;
+        }
+
+        case 'client_delete': {
+            if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
+            $id = post_int('id');
+            if (!q('SELECT 1 FROM clients WHERE id = ?', [$id])->fetchColumn()) throw new InvalidArgumentException('Client introuvable.');
+            // Droit à l'effacement : les rendez-vous restent (statistiques) mais sans coordonnées.
+            q("UPDATE appointments SET client_id = NULL, client_name = 'Client effacé', client_phone = '', client_email = '', note = '' WHERE client_id = ?", [$id]);
+            q('DELETE FROM clients WHERE id = ?', [$id]);
+            flash('Client effacé de tous les salons.');
+            break;
+        }
+
         default:
             throw new InvalidArgumentException('Action inconnue.');
     }

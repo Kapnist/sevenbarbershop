@@ -2803,3 +2803,15 @@ html:has(.lightbox[open]) {
     gap: 4px;
   }
 }
+.booking-confirmation-actions{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 22px}
+.button-danger{border-color:#b5544c;background:#b5544c;color:#fff}
+.button-danger:hover,.button-danger:focus-visible{border-color:#9c433c;background:#9c433c;color:#fff}
+@media(max-width:640px){
+  .booking-step{padding-top:26px}
+  .booking-options,.booking-staff{grid-template-columns:1fr}
+  .booking-slots{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+  .booking-day{width:64px;min-height:84px}
+  .booking-days{grid-auto-columns:64px}
+  .booking-confirmation-actions .button{width:100%;justify-content:center}
+}
+
