@@ -129,9 +129,9 @@ describe("Médiathèque et photos du site", { skip }, () => {
     await owner.action({ action: "slot_move", slot: "le-port.gallery", origin: "1", dir: "up" }, "photos");
     assert.deepEqual(await summary("le-port.gallery"), ["o1", "o0"]);
 
-    // Ajouter des photos : elles s'ajoutent à la suite, sans effacer les photos d'origine
+    // Ajouter des photos « à la fin » : à la suite, sans effacer les photos d'origine
     const ids = bo.sql("SELECT id FROM media ORDER BY id LIMIT 2").map((r) => String(r.id));
-    const form = new URLSearchParams({ action: "slot_add", slot: "le-port.gallery", csrf: await owner.csrf("/admin/index.php?p=photos") });
+    const form = new URLSearchParams({ action: "slot_add", slot: "le-port.gallery", position: "end", csrf: await owner.csrf("/admin/index.php?p=photos") });
     ids.forEach((id) => form.append("media[]", id));
     await owner.request("/admin/index.php?p=photos", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form });
     assert.deepEqual(await summary("le-port.gallery"), ["o1", "o0", `m${tag(ids[0])}`, `m${tag(ids[1])}`]);
@@ -157,12 +157,29 @@ describe("Médiathèque et photos du site", { skip }, () => {
     assert.equal((await media())["le-port.gallery"], undefined);
   });
 
+  test("réalisations : une photo ajoutée va en tête par défaut, donc visible tout de suite sur l'accueil", async () => {
+    const [m] = bo.sql("SELECT id FROM media ORDER BY id LIMIT 1");
+    const page = await owner.action({ action: "slot_add", slot: "site.realisations", "media[]": String(m.id) }, "photos");
+    assert.match(page, /en tête de la galerie/);
+    const order = await summary("site.realisations");
+    assert.equal(order[0], `m${tag(m.id)}`, "la nouvelle photo est la 1re (l'accueil montre les 3 premières)");
+    assert.deepEqual(order.slice(1), ["o0", "o1", "o2", "o3", "o4", "o5"]);
+    const { text } = await owner.get("/admin/index.php?p=photos");
+    const block = text.slice(text.indexOf('id="slot-site.realisations"'), text.indexOf('id="slot-salon.interior"'));
+    assert.equal((block.match(/class="thumb-home"/g) ?? []).length, 3, "les 3 photos de l'accueil sont signalées");
+  });
+
+  test("l'API des photos n'est jamais mise en cache (changement visible au rechargement)", async () => {
+    const res = await fetch(`${bo.base}/api/media.php`);
+    assert.match(res.headers.get("cache-control") ?? "", /no-store/);
+  });
+
   test("la page Photos du site propose « Changer » sur chaque photo de chaque galerie", async () => {
     const { text } = await owner.get("/admin/index.php?p=photos");
     assert.doesNotMatch(text, PHP_ERRORS);
     const count = (slot) => (text.match(new RegExp(`data-pick="${slot.replace(".", "\\.")}" data-mode="replace"`, "g")) ?? []).length;
     assert.equal(count("salon.team"), 5, "5 photos de l'équipe, chacune modifiable");
-    assert.equal(count("site.realisations"), 6);
+    assert.equal(count("site.realisations"), 7, "6 photos d'origine + 1 ajoutée");
     assert.equal(count("meyerbeer.gallery"), 5);
     assert.match(text, /Galerie personnalisée · 5 photos/);
   });

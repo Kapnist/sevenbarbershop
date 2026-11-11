@@ -7,8 +7,6 @@ require dirname(__DIR__) . '/inc/media.php';
 api_cors(['GET']);
 
 if (!is_installed()) json_out(['slots' => new stdClass()]);
-header('Cache-Control: public, max-age=60');
-$slots = media_public();
-http_response_code(200);
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode(['slots' => $slots ?: new stdClass()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+// Jamais de cache : une photo changée dans l'espace gérant apparaît dès le rechargement de la page.
+// (Les fichiers des photos, eux, ont un nom unique et restent en cache longtemps.)
+json_out(['slots' => media_public() ?: new stdClass()]);

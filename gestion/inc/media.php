@@ -76,7 +76,7 @@ function media_slots(): array
         'home.spirit' => ['group' => 'Accueil', 'label' => "Photo « L'esprit Seven »", 'type' => 'single', 'salon' => null,
             'help' => "À côté du texte de présentation, sur la page d'accueil.", 'defaults' => ['/images/meyerbeer/photo-5.webp']],
         'site.realisations' => ['group' => 'Accueil', 'label' => 'Réalisations (coupes et barbes)', 'type' => 'gallery', 'salon' => null,
-            'help' => "Les 3 premières sur l'accueil, toutes sur la page « Le salon ».",
+            'help' => "Les 3 premières sur l'accueil, toutes sur la page « Le salon ».", 'home' => 3,
             'defaults' => media_defaults_set('realisations', ['burst-fade-et-barbe', 'degrade-bas-et-barbe-taillee', 'low-taper-cheveux-ondules', 'taper-coiffe-en-arriere', 'low-fade-cheveux-boucles', 'taper-cheveux-boucles'])],
         'salon.interior' => ['group' => 'Page « Le salon »', 'label' => 'Photo principale', 'type' => 'single', 'salon' => null,
             'help' => "En haut de la page, à côté de l'histoire du salon.", 'defaults' => ['/images/salon/salon-billard-fauteuils-cuir-640.webp']],
@@ -331,21 +331,30 @@ function gallery_replace(int $linkId, int $mediaId): void
     q('UPDATE media_slots SET media_id = ?, origin = NULL WHERE id = ?', [$mediaId, $linkId]);
 }
 
-/** Ajoute des photos à la fin d'une galerie, en gardant celles déjà présentes (origine comprise). */
-function slot_add(string $slot, array $mediaIds): int
+/**
+ * Ajoute des photos à une galerie, en gardant celles déjà présentes (origine comprise).
+ * $atStart : en tête de galerie (visibles en premier, par exemple sur l'accueil) ; sinon à la fin.
+ */
+function slot_add(string $slot, array $mediaIds, bool $atStart = true): int
 {
     gallery_materialize($slot);
-    $max = (int) q('SELECT COALESCE(MAX(sort), 0) FROM media_slots WHERE slot = ?', [$slot])->fetchColumn();
     $already = array_map('intval', q('SELECT media_id FROM media_slots WHERE slot = ? AND media_id > 0', [$slot])->fetchAll(PDO::FETCH_COLUMN));
-    $n = 0;
+    $new = [];
     foreach ($mediaIds as $id) {
-        if (in_array($id, $already, true) || !media_get($id)) continue;
-        $max += 10;
-        q('INSERT INTO media_slots (slot, media_id, sort) VALUES (?, ?, ?)', [$slot, $id, $max]);
-        $already[] = $id;
-        $n++;
+        if (in_array($id, $already, true) || in_array($id, $new, true) || !media_get($id)) continue;
+        $new[] = $id;
     }
-    return $n;
+    if (!$new) return 0;
+    $existing = array_map('intval', q('SELECT id FROM media_slots WHERE slot = ? ORDER BY sort, id', [$slot])->fetchAll(PDO::FETCH_COLUMN));
+    $inserted = [];
+    foreach ($new as $id) {
+        q('INSERT INTO media_slots (slot, media_id, sort) VALUES (?, ?, 0)', [$slot, $id]);
+        $inserted[] = (int) db()->lastInsertId();
+    }
+    // Nouvel ordre complet, numéroté de 10 en 10
+    $order = $atStart ? [...$inserted, ...$existing] : [...$existing, ...$inserted];
+    foreach ($order as $k => $linkId) q('UPDATE media_slots SET sort = ? WHERE id = ?', [($k + 1) * 10, $linkId]);
+    return count($new);
 }
 
 /** Déplace une photo d'une galerie d'un cran (-1 : avant, +1 : après). */

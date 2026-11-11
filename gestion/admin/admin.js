@@ -211,6 +211,8 @@
       const files = $('[data-pick-files]', dlgPick);
       if (files) { files.multiple = gallery; files.value = ''; files.dispatchEvent(new Event('change')); }
       if (submit) submit.textContent = gallery ? 'Ajouter les photos choisies' : 'Utiliser cette photo';
+      // « Au début / à la fin » : seulement pour un ajout à une galerie
+      $$('[data-pick-position]', dlgPick).forEach(l => { l.hidden = !gallery; $('select', l).value = 'start'; });
       showSeg($$('[data-pick-input]', dlgPick).length ? 'library' : 'upload');
       openDialog(dlgPick);
     });

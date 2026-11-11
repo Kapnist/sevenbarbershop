@@ -496,9 +496,10 @@ function run_admin_action(string $action, array $user, array $salon): void
                     gallery_replace(gallery_link($slot, post_int('link'), post_origin()), $ids[0]);
                     if (count($ids) > 1) slot_add($slot, array_slice($ids, 1));
                 } else {
-                    slot_add($slot, $ids);
+                    slot_add($slot, $ids, post('position') !== 'end');
                 }
-                flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque et placée' . (count($ids) > 1 ? 's' : '') . ' sur le site : « ' . media_slots()[$slot]['label'] . ' ».');
+                flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque et placée' . (count($ids) > 1 ? 's' : '') . ' sur le site : « ' . media_slots()[$slot]['label'] . ' »'
+                    . (!$replacing && media_slots()[$slot]['type'] === 'gallery' ? (post('position') === 'end' ? ', à la fin de la galerie.' : ', en tête de la galerie.') : '.'));
             } else {
                 flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque.');
             }
@@ -541,8 +542,9 @@ function run_admin_action(string $action, array $user, array $salon): void
                 slot_set_single($slot, $ids[0]);
                 flash("Photo changée : « {$def['label']} ».");
             } else {
-                $n = slot_add($slot, $ids);
-                flash($n ? "$n photo" . ($n > 1 ? 's ajoutées' : ' ajoutée') . " : « {$def['label']} »." : 'Ces photos sont déjà dans la galerie.');
+                $atStart = post('position') !== 'end';
+                $n = slot_add($slot, $ids, $atStart);
+                flash($n ? "$n photo" . ($n > 1 ? 's ajoutées' : ' ajoutée') . " : « {$def['label']} », " . ($atStart ? 'en tête de la galerie.' : 'à la fin de la galerie.') : 'Ces photos sont déjà dans la galerie.');
             }
             break;
         }

@@ -59,17 +59,30 @@ function load() {
   } catch {
     /* stockage indisponible */
   }
-  fetch(`${MEDIA_BASE}/api/media.php`, { headers: { Accept: "application/json" } })
+  refresh();
+  // Retour sur l'onglet du site (après un changement dans l'espace gérant) : photos remises à jour.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refresh();
+  });
+}
+
+let lastFetch = 0;
+
+function refresh() {
+  if (Date.now() - lastFetch < 3000) return;
+  lastFetch = Date.now();
+  fetch(`${MEDIA_BASE}/api/media.php`, { headers: { Accept: "application/json" }, cache: "no-store" })
     .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
     .then((data: { slots?: Record<string, SlotItem[]> }) => {
       const map: MediaMap = {};
       for (const [slot, items] of Object.entries(data.slots ?? {})) map[slot] = items.map(absolute);
+      const serialized = JSON.stringify(map);
       try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(map));
+        sessionStorage.setItem(CACHE_KEY, serialized);
       } catch {
         /* stockage indisponible */
       }
-      publish(map);
+      if (serialized !== JSON.stringify(current)) publish(map);
     })
     .catch(() => {
       /* API absente : photos d'origine */

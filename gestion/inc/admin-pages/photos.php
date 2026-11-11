@@ -70,6 +70,7 @@ admin_header('Photos du site', 'photos', $user, $salon);
               $target = '<input type="hidden" name="slot" value="' . e($key) . '"><input type="hidden" name="link" value="' . $it['link'] . '"><input type="hidden" name="origin" value="' . ($it['link'] ? '' : $it['origin']) . '"><input type="hidden" name="back" value="' . e($back . '#slot-' . $key) . '">'; ?>
             <li class="<?= $it['origin'] !== null ? 'is-default' : '' ?>">
               <span class="thumb-num"><?= $i + 1 ?></span>
+              <?php if ($i < ($def['home'] ?? 0)): ?><span class="thumb-home" title="Affichée sur la page d'accueil">Accueil</span><?php endif; ?>
               <?php if ($it['origin'] !== null): ?><span class="thumb-tag">Origine</span><?php endif; ?>
               <img src="<?= e($it['src']) ?>" alt="<?= e($it['alt']) ?>" loading="lazy">
               <div class="thumb-actions">
@@ -128,7 +129,12 @@ admin_header('Photos du site', 'photos', $user, $salon);
           </label>
         <?php endforeach; ?>
       </div>
-      <div class="modal-foot"><button class="btn" type="submit" data-pick-submit>Utiliser cette photo</button></div>
+      <div class="modal-foot pick-foot">
+        <label class="pick-position" data-pick-position hidden>Placer
+          <select name="position"><option value="start">au début de la galerie (vue en premier)</option><option value="end">à la fin de la galerie</option></select>
+        </label>
+        <button class="btn" type="submit" data-pick-submit>Utiliser cette photo</button>
+      </div>
     <?php endif; ?>
   </form>
   <form method="post" enctype="multipart/form-data" class="stack" data-seg-panel="upload" data-upload hidden>
@@ -141,6 +147,9 @@ admin_header('Photos du site', 'photos', $user, $salon);
     </label>
     <div class="previews" data-previews></div>
     <label>Description de la photo <span class="muted small">(ce qu'elle montre, pour Google et les malvoyants)</span> <input name="alt" maxlength="250"></label>
+    <label class="pick-position" data-pick-position hidden>Placer
+      <select name="position"><option value="start">au début de la galerie (vue en premier)</option><option value="end">à la fin de la galerie</option></select>
+    </label>
     <div class="modal-foot"><button class="btn" type="submit">Envoyer et utiliser</button></div>
   </form>
 </dialog>
