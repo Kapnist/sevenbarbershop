@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useSalonImages } from "../data/media";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 import { asset } from "../asset";
@@ -19,6 +20,12 @@ function ChavanellePage() {
   const salon = salonLocations.find(
     (location) => location.name === "Place Chavanelle",
   );
+  const images = useSalonImages(
+    "chavanelle",
+    asset("/images/chavanelle/photo-1.webp"),
+    photos.map((src) => asset(src)),
+    text.photos,
+  );
 
   if (!salon?.bookingUrl) {
     throw new Error(
@@ -31,8 +38,10 @@ function ChavanellePage() {
       <section className="chavanelle-hero">
         <img
           className="chavanelle-hero-image"
-          src={asset("/images/chavanelle/photo-1.webp")}
-          alt={text.heroAlt}
+          src={images.hero.src}
+          srcSet={images.hero.srcSet}
+          sizes={images.hero.srcSet ? "100vw" : undefined}
+          alt={images.hero.alt || text.heroAlt}
           fetchPriority="high"
         />
         <div className="chavanelle-hero-shade" />
@@ -97,15 +106,17 @@ function ChavanellePage() {
             <p className="section-intro">{t.salon.galleryIntro}</p>
           </div>
           <div className="chavanelle-gallery">
-            {photos.map((src, index) => (
-              <figure className="chavanelle-photo" key={src}>
+            {images.gallery.map((photo, index) => (
+              <figure className="chavanelle-photo" key={`${photo.src}-${index}`}>
                 <img
-                  src={asset(src)}
-                  alt={text.photos[index].alt}
+                  src={photo.src}
+                  srcSet={photo.srcSet}
+                  sizes={photo.srcSet ? "(max-width: 760px) 100vw, 33vw" : undefined}
+                  alt={photo.alt ?? ""}
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>{text.photos[index].label}</figcaption>
+                {photo.label && <figcaption>{photo.label}</figcaption>}
               </figure>
             ))}
           </div>

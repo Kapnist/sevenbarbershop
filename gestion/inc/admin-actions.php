@@ -453,6 +453,103 @@ function run_admin_action(string $action, array $user, array $salon): void
             break;
         }
 
+        /* ---------- Médiathèque et photos du site ---------- */
+        case 'media_upload': {
+            $files = $_FILES['photos'] ?? null;
+            if (!$files || !is_array($files['name'] ?? null)) {
+                // Envoi plus lourd que post_max_size : PHP vide $_POST et $_FILES
+                throw new InvalidArgumentException('Aucune photo reçue. Si vos photos sont très lourdes, envoyez-les en plusieurs fois.');
+            }
+            $slot = post('assign_slot');
+            if ($slot !== '' && !can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
+            $stored = [];
+            $errors = [];
+            foreach ($files['name'] as $i => $name) {
+                $code = (int) $files['error'][$i];
+                if ($code === UPLOAD_ERR_NO_FILE) continue;
+                if ($code !== UPLOAD_ERR_OK) { $errors[] = upload_error_message($code, (string) $name); continue; }
+                try {
+                    $stored[] = media_store($files['tmp_name'][$i], (string) $name, post('alt'));
+                } catch (InvalidArgumentException $ex) {
+                    $errors[] = $ex->getMessage();
+                }
+            }
+            foreach ($errors as $err) flash($err, 'err');
+            if (!$stored) {
+                if (!$errors) flash('Aucune photo choisie.', 'err');
+                break;
+            }
+            $ids = array_map(fn($m) => (int) $m['id'], $stored);
+            if ($slot !== '') {
+                if (media_slots()[$slot]['type'] === 'single') slot_set_single($slot, $ids[0]);
+                else slot_add($slot, $ids);
+                flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque et placée' . (count($ids) > 1 ? 's' : '') . ' sur le site : « ' . media_slots()[$slot]['label'] . ' ».');
+            } else {
+                flash(count($ids) . ' photo' . (count($ids) > 1 ? 's ajoutées' : ' ajoutée') . ' à la médiathèque.');
+            }
+            break;
+        }
+
+        case 'media_update': {
+            $m = media_get(post_int('id'));
+            if (!$m) throw new InvalidArgumentException('Photo introuvable.');
+            q('UPDATE media SET alt = ?, title = ?, caption = ? WHERE id = ?', [
+                mb_substr(post('alt'), 0, 250), mb_substr(post('title'), 0, 120), mb_substr(post('caption'), 0, 250), $m['id'],
+            ]);
+            flash('Textes de la photo enregistrés.');
+            break;
+        }
+
+        case 'media_delete': {
+            if (!$user['is_owner']) throw new InvalidArgumentException('Seul le propriétaire peut supprimer une photo de la médiathèque.');
+            $m = media_get(post_int('id'));
+            if (!$m) throw new InvalidArgumentException('Photo introuvable.');
+            media_delete((int) $m['id']);
+            flash('Photo supprimée. Les emplacements qui l\'utilisaient reprennent leur photo précédente.');
+            break;
+        }
+
+        case 'slot_set':
+        case 'slot_add': {
+            $slot = post('slot');
+            if (!can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
+            $ids = array_values(array_filter(array_map('intval', (array) ($_POST['media'] ?? []))));
+            if (!$ids) throw new InvalidArgumentException('Choisissez au moins une photo.');
+            $def = media_slots()[$slot];
+            if ($action === 'slot_set' || $def['type'] === 'single') {
+                if (!media_get($ids[0])) throw new InvalidArgumentException('Photo introuvable.');
+                slot_set_single($slot, $ids[0]);
+                flash("Photo changée : « {$def['label']} ».");
+            } else {
+                $n = slot_add($slot, $ids);
+                flash($n ? "$n photo" . ($n > 1 ? 's ajoutées' : ' ajoutée') . " : « {$def['label']} »." : 'Ces photos sont déjà dans la galerie.');
+            }
+            break;
+        }
+
+        case 'slot_remove':
+        case 'slot_move': {
+            $slot = post('slot');
+            if (!can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
+            $link = post_int('link');
+            if ($action === 'slot_remove') {
+                q('DELETE FROM media_slots WHERE id = ? AND slot = ?', [$link, $slot]);
+                flash('Photo retirée de cet emplacement (elle reste dans la médiathèque).');
+            } else {
+                slot_move($slot, $link, post('dir') === 'up' ? -1 : 1);
+            }
+            break;
+        }
+
+        case 'slot_reset': {
+            $slot = post('slot');
+            if (!can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
+            ensure_media_schema();
+            q('DELETE FROM media_slots WHERE slot = ?', [$slot]);
+            flash('Photo d\'origine rétablie : « ' . media_slots()[$slot]['label'] . ' ».');
+            break;
+        }
+
         /* ---------- Réservation en ligne dans tous les salons (propriétaire) ---------- */
         case 'booking_all': {
             if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');

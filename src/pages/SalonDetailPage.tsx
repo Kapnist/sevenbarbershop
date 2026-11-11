@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import type { SalonPageConfig } from "../data/salonPages";
+import { salonSlug } from "../data/booking";
+import { useSalonImages } from "../data/media";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 import { asset } from "../asset";
@@ -28,6 +30,12 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
   const salon = salonLocations.find(
     (location) => location.name === config.locationName,
   );
+  const images = useSalonImages(
+    (salon && salonSlug(salon)) ?? "",
+    asset(config.heroImage),
+    config.photos.map((src) => asset(src)),
+    text.photos,
+  );
 
   if (!salon?.bookingUrl) {
     throw new Error(
@@ -54,8 +62,10 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
       <section className={`${hero}-hero`}>
         <img
           className={`${hero}-hero-image`}
-          src={asset(config.heroImage)}
-          alt={text.heroAlt}
+          src={images.hero.src}
+          srcSet={images.hero.srcSet}
+          sizes={images.hero.srcSet ? "100vw" : undefined}
+          alt={images.hero.alt || text.heroAlt}
           fetchPriority="high"
         />
         <div className={`${hero}-hero-shade`} />
@@ -177,22 +187,24 @@ function SalonDetailPage({ config }: { config: SalonPageConfig }) {
             </p>
           </div>
           <div className={`${config.galleryStyle}-gallery`}>
-            {config.photos.map((src, index) => (
+            {images.gallery.map((photo, index) => (
               <figure
                 className={
                   config.galleryStyle === "anatole"
                     ? `anatole-photo${index === 0 ? " anatole-photo-featured" : ""}`
                     : "jean-jaures-photo"
                 }
-                key={src}
+                key={`${photo.src}-${index}`}
               >
                 <img
-                  src={asset(src)}
-                  alt={text.photos[index].alt}
+                  src={photo.src}
+                  srcSet={photo.srcSet}
+                  sizes={photo.srcSet ? "(max-width: 760px) 100vw, 50vw" : undefined}
+                  alt={photo.alt ?? ""}
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>{text.photos[index].label}</figcaption>
+                {photo.label && <figcaption>{photo.label}</figcaption>}
               </figure>
             ))}
           </div>

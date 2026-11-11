@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import Lookbook from "../components/Lookbook";
 import ServiceCard from "../components/ServiceCard";
+import { salonSlug } from "../data/booking";
+import { mediaSrcSet, useGallery, useMedia } from "../data/media";
 import { realisations } from "../data/photos";
 import { salonLocations } from "../data/salons";
 import { featuredServices } from "../data/services";
@@ -12,6 +14,9 @@ const cities = ["Saint-Étienne", "Nice"];
 function HomePage() {
   const { t, formatNumber } = useI18n();
   const home = t.home;
+  const media = useMedia();
+  const spirit = media["home.spirit"]?.[0];
+  const works = useGallery("site.realisations", realisations);
   const highlights = [
     { value: String(salonLocations.length), label: home.highlights.salons },
     { value: "2", label: home.highlights.cities },
@@ -76,8 +81,10 @@ function HomePage() {
       <section className="home-salon">
         <div className="wrap home-salon-grid">
           <img
-            src={asset("/images/meyerbeer/photo-5.webp")}
-            alt={home.spiritAlt}
+            src={spirit ? spirit.large : asset("/images/meyerbeer/photo-5.webp")}
+            srcSet={spirit ? mediaSrcSet(spirit) : undefined}
+            sizes={spirit ? "(max-width: 760px) 100vw, 50vw" : undefined}
+            alt={spirit?.alt || home.spiritAlt}
             loading="lazy"
             decoding="async"
           />
@@ -101,7 +108,7 @@ function HomePage() {
             </div>
             <p className="section-intro">{home.lookbookIntro}</p>
           </div>
-          <Lookbook photos={realisations.slice(0, 3)} label={home.lookbookLabel} />
+          <Lookbook photos={works.slice(0, 3)} label={home.lookbookLabel} />
           <Link className="text-link lookbook-cta" to="/salon#realisations">
             {home.lookbookLink} <span aria-hidden="true">→</span>
           </Link>
@@ -131,7 +138,7 @@ function HomePage() {
                     >
                       {location.image && (
                         <img
-                          src={asset(location.image)}
+                          src={media[`${salonSlug(location)}.hero`]?.[0]?.src ?? asset(location.image)}
                           alt={home.cardAlt(location.name, location.city)}
                           loading="lazy"
                           decoding="async"

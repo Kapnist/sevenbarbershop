@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
-import { photoSrc, photoSrcSet, type Photo } from "../data/photos";
+import { photoSrc, photoSrcSet, photoText, type Photo } from "../data/photos";
 import { useI18n } from "../i18n";
 
 interface LookbookProps {
@@ -13,7 +13,7 @@ function Lookbook({ photos, variant = "grid", label }: LookbookProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const current = openIndex === null ? null : photos[openIndex];
-  const currentText = current ? t.photos[current.id] : null;
+  const currentText = current ? photoText(current, t.photos) : null;
 
   function open(index: number) {
     setOpenIndex(index);
@@ -45,9 +45,9 @@ function Lookbook({ photos, variant = "grid", label }: LookbookProps) {
     <>
       <div className={`lookbook lookbook-${variant}`} aria-label={label} role="list">
         {photos.map((photo, index) => {
-          const text = t.photos[photo.id];
+          const text = photoText(photo, t.photos);
           return (
-            <figure className="lookbook-item" key={photo.base} role="listitem">
+            <figure className="lookbook-item" key={`${photo.base}-${index}`} role="listitem">
               <button
                 className="lookbook-trigger"
                 type="button"

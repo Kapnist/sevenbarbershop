@@ -14,7 +14,10 @@ if (!array_key_exists($page, ADMIN_NAV) || (in_array($page, OWNER_PAGES, true) &
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require dirname(__DIR__) . '/inc/admin-actions.php';
-    if (!csrf_valid($_POST['csrf'] ?? null)) {
+    if (!$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        // Envoi plus lourd que post_max_size : PHP a tout ignoré
+        flash('Envoi trop lourd pour le serveur (limite : ' . ini_get('post_max_size') . '). Envoyez moins de photos à la fois.', 'err');
+    } elseif (!csrf_valid($_POST['csrf'] ?? null)) {
         flash('Session expirée : rechargez la page et recommencez.', 'err');
     } else {
         try {
@@ -25,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Page de retour (une action peut la changer, par exemple vers « Barbiers » après la création d'un salon)
     $back = (string) ($_POST['back'] ?? '');
-    if (!preg_match('/^index\.php\?[\w=&%.\-]*$/', $back)) $back = admin_url($page);
+    if (!preg_match('/^index\.php\?[\w=&%.\-]*(#[\w.\-]+)?$/', $back)) $back = admin_url($page);
     redirect($back);
 }
 

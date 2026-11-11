@@ -12,7 +12,7 @@ import { join, resolve } from "node:path";
 import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { phpAvailable, startBackOffice } from "../helpers/php-server.mjs";
+import { makeImage, phpAvailable, startBackOffice } from "../helpers/php-server.mjs";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 const SHOTS = process.env.SCREENSHOT_DIR;
@@ -319,6 +319,56 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
     await context.close();
   });
 
+  test("photos : le propriétaire change les photos depuis l'espace gérant, le site les affiche", async () => {
+    const { page, errors, context } = await newPage(1280);
+    await page.goto(`${base}/gestion/admin/login.php`);
+    await page.fill('input[name="email"]', "owner@example.com");
+    await page.fill('input[name="password"]', "motdepasse-solide");
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/index\.php/);
+    bo.sql("DELETE FROM login_attempts");
+
+    // 1. Photo principale d'Anatole France : « Changer la photo » → onglet « Envoyer »
+    await page.goto(`${base}/gestion/admin/index.php?p=photos`);
+    await page.locator('[data-pick="anatole-france.hero"]').click();
+    await page.getByRole("tab", { name: "Envoyer de nouvelles photos" }).click();
+    await page.locator("[data-pick-files]").setInputFiles({ name: "devanture-neuve.jpg", mimeType: "image/jpeg", buffer: makeImage(2000, 1300) });
+    await page.locator('[data-dlg-pick] input[name="alt"]').fill("Nouvelle devanture du salon");
+    await page.locator('[data-dlg-pick] [data-seg-panel="upload"] button[type="submit"]').click();
+    await page.locator(".alert.ok").filter({ hasText: "placée sur le site" }).waitFor();
+    await shot(page, "admin-photos-du-site");
+
+    // 2. Accueil : « Changer la photo » → choisir dans la médiathèque
+    await page.locator('[data-pick="home.spirit"]').click();
+    await page.locator("[data-dlg-pick] .picker-item").first().click();
+    await page.getByRole("button", { name: "Utiliser cette photo" }).click();
+    await page.locator(".alert.ok").filter({ hasText: "Photo changée" }).waitFor();
+
+    // 3. Médiathèque : la photo y figure, utilisée à deux endroits
+    await page.goto(`${base}/gestion/admin/index.php?p=medias`);
+    assert.match(await page.locator(".media-card").first().textContent(), /Utilisée/);
+    await shot(page, "admin-mediatheque");
+    await context.close();
+
+    // 4. Le site affiche les nouvelles photos (téléphone et ordinateur), sans débordement
+    for (const width of [375, 1280]) {
+      const visit = await newPage(width);
+      await visit.page.goto(`${base}/salons/anatole-france`);
+      await visit.page.waitForFunction(() => document.querySelector(".anatole-hero-image")?.getAttribute("src")?.includes("/gestion/uploads/"));
+      assert.equal(await visit.page.locator(".anatole-hero-image").getAttribute("alt"), "Nouvelle devanture du salon");
+      const loaded = await visit.page.locator(".anatole-hero-image").evaluate((img) => img.complete && img.naturalWidth > 0);
+      assert.ok(loaded, "la photo envoyée s'affiche");
+      assert.equal(await overflow(visit.page), 0);
+      await visit.page.goto(`${base}/`);
+      await visit.page.waitForFunction(() => document.querySelector(".home-salon-grid img")?.getAttribute("src")?.includes("/gestion/uploads/"));
+      await visit.page.waitForFunction(() => document.querySelector(".salon-card img")?.getAttribute("src")?.includes("/gestion/uploads/"));
+      if (width === 375) await shot(visit.page, "site-photo-changee-mobile");
+      assert.deepEqual(visit.errors, []);
+      await visit.context.close();
+    }
+    assert.deepEqual(errors, []);
+  });
+
   test("espace gérant : menu mobile, pages lisibles du téléphone au grand écran", async () => {
     const problems = [];
     for (const width of ADMIN_WIDTHS) {
@@ -331,7 +381,7 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
       await page.waitForURL(/index\.php/);
       bo.sql("DELETE FROM login_attempts");
 
-      for (const p of ["agenda", "rdv", "clients", "stats", "equipe", "planning", "prestations", "salons", "comptes", "compte"]) {
+      for (const p of ["agenda", "rdv", "clients", "stats", "photos", "medias", "equipe", "planning", "prestations", "salons", "comptes", "compte"]) {
         await page.goto(`${base}/gestion/admin/index.php?p=${p}`);
         const extra = await overflow(page);
         if (extra > 0) problems.push(`admin ${p} @${width}px : +${extra}px (${(await culprits(page)).join(", ")})`);

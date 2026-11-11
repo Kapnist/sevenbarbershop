@@ -11,6 +11,7 @@ Le dossier `gestion/` contient la réservation en ligne et l'espace gérant. Il 
   - la liste des rendez-vous, exportable en Excel ;
   - le **fichier clients** : visites, absences, consentement aux relances, export, effacement ;
   - les **statistiques** : rendez-vous, chiffre d'affaires estimé, remplissage, absences, barbiers, prestations, jours et heures de pointe, comparaison des salons (propriétaire) ;
+  - la **médiathèque** et les **photos du site**, comme dans WordPress (voir plus bas) ;
   - les salons ;
   - les accès gérants.
 - **Annulation en ligne** : après sa réservation, le client reçoit un lien signé (à l'écran et dans l'e-mail de confirmation). Il peut annuler lui-même jusqu'au délai de prévenance du salon (*Horaires & réservation*). Le créneau est libéré et le salon reçoit un e-mail.
@@ -55,6 +56,21 @@ Commencez par un salon pilote, puis passez les autres.
 Allez dans *Salons*, puis *Ajouter un salon*. Indiquez le nom, la ville et l'adresse, puis choisissez le salon dont reprendre les horaires et la carte. Ajoutez ensuite ses barbiers et ouvrez sa réservation. Le salon apparaît aussitôt sur la page de réservation du site.
 
 Sa **page vitrine** (une page `/salons/…` avec photos et texte) est différente : elle s'ajoute dans le code du site React.
+
+## Photos du site (comme dans WordPress)
+
+- **Médiathèque** : glissez-y vos photos, plusieurs à la fois (JPEG, PNG ou WebP). Chacune est redressée si elle vient d'un téléphone, puis réenregistrée en deux tailles optimisées (640 et 1600 px, WebP). Ses métadonnées, comme la position GPS, sont retirées. Une photo très lourde est réduite dans le navigateur avant l'envoi. Pour chaque photo, renseignez la **description** : elle est lue par Google et par les malvoyants.
+- **Photos du site** : chaque emplacement montre la photo actuelle.
+  - Le bouton « Changer la photo » permet de choisir dans la médiathèque ou d'envoyer une nouvelle photo, placée directement sur l'emplacement.
+  - Dans une galerie, on peut ajouter, réordonner (← →) et retirer des photos.
+  - « Rétablir l'origine » remet la photo prévue dans le code du site.
+- **Emplacements** :
+  - accueil : photo « L'esprit Seven » et réalisations ;
+  - page Le salon : photo principale, équipe et détails ;
+  - pages À propos et Carrières ;
+  - pour chaque salon : photo principale (page du salon et cartes « Nos salons ») et galerie.
+- **Droits** : le propriétaire gère tout le site. Un responsable gère seulement les photos de son salon, et ne peut pas supprimer une photo de la médiathèque.
+- **Technique** : les photos sont rangées dans `gestion/uploads/`. Ce dossier n'exécute aucun script et ne sert que des images. Il n'est ni envoyé sur GitHub ni copié par `npm run build` : ne le supprimez pas sur le serveur lors d'une mise à jour. Le site lit les choix sur `api/media.php`. Sans réponse de l'API (GitHub Pages, pré-rendu), il garde ses photos d'origine. GD doit être activé dans PHP ; il l'est par défaut chez OVH.
 
 ## Fichier clients et consentement
 

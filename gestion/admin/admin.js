@@ -123,6 +123,95 @@
     });
   }
 
+  /* ---------- Envoi de photos : glisser-déposer, aperçus, réduction avant envoi ---------- */
+  const MAX_SIDE = 2400; // assez pour le site (1600 px) avec de la marge, et bien plus léger à envoyer
+  const shrink = file => new Promise(resolve => {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1.5 * 1024 * 1024) return resolve(file);
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        if (!blob || blob.size >= file.size) return resolve(file);
+        resolve(new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.9);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+
+  $$('form[data-upload]').forEach(form => {
+    const input = $('input[type="file"]', form);
+    const drop = $('[data-drop]', form);
+    const previews = $('[data-previews]', form);
+    const showPreviews = () => {
+      if (!previews) return;
+      previews.innerHTML = '';
+      [...input.files].slice(0, 30).forEach(f => {
+        const img = document.createElement('img');
+        img.alt = f.name;
+        img.src = URL.createObjectURL(f);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        previews.appendChild(img);
+      });
+      const label = $('b', drop);
+      if (label) label.textContent = input.files.length ? `${input.files.length} photo${input.files.length > 1 ? 's' : ''} choisie${input.files.length > 1 ? 's' : ''}` : 'Glissez vos photos ici ou cliquez pour les choisir';
+    };
+    input.addEventListener('change', showPreviews);
+    ['dragenter', 'dragover'].forEach(t => drop?.addEventListener(t, () => drop.classList.add('is-over')));
+    ['dragleave', 'drop'].forEach(t => drop?.addEventListener(t, () => drop.classList.remove('is-over')));
+
+    form.addEventListener('submit', async e => {
+      if (form.dataset.ready === '1' || !input.files.length || typeof DataTransfer === 'undefined') return;
+      e.preventDefault();
+      const buttons = $$('button[type="submit"]', form);
+      buttons.forEach(b => { b.disabled = true; b.dataset.label = b.textContent; b.textContent = 'Préparation des photos…'; });
+      try {
+        const dt = new DataTransfer();
+        for (const f of input.files) dt.items.add(await shrink(f));
+        input.files = dt.files;
+      } catch { /* en cas d'échec, on envoie les fichiers d'origine */ }
+      buttons.forEach(b => (b.textContent = 'Envoi en cours…'));
+      form.dataset.ready = '1';
+      form.submit();
+    });
+  });
+
+  /* ---------- Photos du site : fenêtre de choix ---------- */
+  const dlgPick = $('[data-dlg-pick]');
+  if (dlgPick) {
+    const segs = $$('[data-seg]', dlgPick);
+    const showSeg = name => {
+      segs.forEach(s => s.setAttribute('aria-selected', String(s.dataset.seg === name)));
+      $$('[data-seg-panel]', dlgPick).forEach(p => { p.hidden = p.dataset.segPanel !== name; });
+    };
+    segs.forEach(s => s.addEventListener('click', () => showSeg(s.dataset.seg)));
+    const submit = $('[data-pick-submit]', dlgPick);
+
+    document.addEventListener('click', e => {
+      const trigger = e.target.closest('[data-pick]');
+      if (!trigger) return;
+      const gallery = trigger.dataset.mode === 'gallery';
+      const slot = trigger.dataset.pick;
+      $$('[data-pick-slot]', dlgPick).forEach(i => (i.value = slot));
+      $$('[data-pick-back]', dlgPick).forEach(i => (i.value = `index.php?p=photos#slot-${slot}`));
+      $('[data-pick-action]', dlgPick).value = gallery ? 'slot_add' : 'slot_set';
+      $('[data-pick-label]', dlgPick).textContent = trigger.dataset.label;
+      $('#dlg-pick-title').textContent = gallery ? 'Ajouter des photos à la galerie' : 'Choisir une photo';
+      $$('[data-pick-input]', dlgPick).forEach(i => { i.type = gallery ? 'checkbox' : 'radio'; i.checked = false; });
+      const files = $('[data-pick-files]', dlgPick);
+      if (files) { files.multiple = gallery; files.value = ''; files.dispatchEvent(new Event('change')); }
+      if (submit) submit.textContent = gallery ? 'Ajouter les photos choisies' : 'Utiliser cette photo';
+      showSeg($$('[data-pick-input]', dlgPick).length ? 'library' : 'upload');
+      openDialog(dlgPick);
+    });
+  }
+
   /* ---------- Agenda : se placer sur l'heure actuelle ---------- */
   const agenda = $('.agenda');
   const now = $('.now', agenda || document);

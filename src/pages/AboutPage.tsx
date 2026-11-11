@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
-import { brandPhoto, photoSrc, photoSrcSet } from "../data/photos";
+import { mediaToPhoto, useSlotPhoto } from "../data/media";
+import { brandPhoto, photoSrc, photoSrcSet, photoText } from "../data/photos";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 
@@ -9,6 +10,8 @@ const cities = ["Saint-Étienne", "Nice"];
 function AboutPage() {
   const { t } = useI18n();
   const page = t.about;
+  const custom = useSlotPhoto("about.brand");
+  const photo = custom ? mediaToPhoto(custom) : brandPhoto;
 
   return (
     <>
@@ -32,11 +35,11 @@ function AboutPage() {
           </div>
           <img
             className="salon-story-image salon-story-image-portrait"
-            src={photoSrc(brandPhoto)}
-            srcSet={photoSrcSet(brandPhoto)}
+            src={photoSrc(photo)}
+            srcSet={photoSrcSet(photo)}
             sizes="(max-width: 760px) 100vw, 55vw"
-            alt={t.photos[brandPhoto.id].alt}
-            style={{ objectPosition: brandPhoto.position }}
+            alt={photoText(photo, t.photos).alt}
+            style={{ objectPosition: photo.position }}
             loading="lazy"
             decoding="async"
           />

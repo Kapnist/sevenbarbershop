@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/booking.php';
+require_once __DIR__ . '/media.php';
 
 const ADMIN_NAV = [
     'agenda' => ['Agenda', 'M3 5h18M3 10h18M7 3v4m10-4v4M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z'],
@@ -14,6 +15,8 @@ const ADMIN_NAV = [
     'equipe' => ['Barbiers', 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1m18 0v-1a4 4 0 0 0-3-3.9M15 3.1a4 4 0 0 1 0 7.8M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
     'planning' => ['Horaires & réservation', 'M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
     'prestations' => ['Prestations & prix', 'M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm2.1-8.1L20 18M20 6 8.1 17.1'],
+    'photos' => ['Photos du site', 'M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16m-2-2 1.6-1.6a2 2 0 0 1 2.8 0L20 14M14 8h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z'],
+    'medias' => ['Médiathèque', 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm9 3v6m-3-3h6'],
     'salons' => ['Salons', 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6'],
     'comptes' => ['Accès gérants', 'M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9 13a6 6 0 0 1 12 0M19 8v6m3-3h-6'],
     'compte' => ['Mon compte', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0'],
@@ -145,7 +148,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=5">
+<link rel="stylesheet" href="admin.css?v=6">
 </head>
 <body class="admin">
 <header class="topbar">
@@ -195,7 +198,7 @@ function admin_footer(): void
 {
     ?>
 </main>
-<script src="admin.js?v=4" defer></script>
+<script src="admin.js?v=6" defer></script>
 </body>
 </html>
 <?php

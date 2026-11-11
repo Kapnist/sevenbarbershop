@@ -75,6 +75,18 @@ export class Session {
     if (!m) throw new Error(`Jeton CSRF introuvable sur ${path}`);
     return m[1];
   }
+  /** Envoi multipart (photos) : files = [{ name, type, bytes }]. Renvoie la page suivante. */
+  async upload(fields, files, page = "medias") {
+    const csrf = await this.csrf(`/admin/index.php?p=${page}`);
+    const form = new FormData();
+    for (const [k, v] of Object.entries({ csrf, ...fields })) form.append(k, v);
+    for (const f of files) form.append("photos[]", new Blob([f.bytes], { type: f.type }), f.name);
+    const res = await this.request(`/admin/index.php?p=${page}`, { method: "POST", body: form });
+    await res.text();
+    const location = res.headers.get("location") ?? `index.php?p=${page}`;
+    return (await this.get(`/admin/${location.replace(/#.*$/, "")}`)).text;
+  }
+
   /** Envoie une action de l'espace gérant et renvoie la page suivante (avec ses messages). */
   async action(fields, page = "agenda") {
     const csrf = await this.csrf(`/admin/index.php?p=${page}`);
@@ -93,6 +105,18 @@ export async function json(res) {
   }
 }
 
+/** Fabrique une vraie image (JPEG ou PNG) avec PHP/GD, pour tester les envois. */
+export function makeImage(width, height, type = "jpeg") {
+  const code = `$i=imagecreatetruecolor((int)$argv[1],(int)$argv[2]);imagefill($i,0,0,imagecolorallocate($i,200,169,110));imagefilledrectangle($i,10,10,(int)($argv[1]/2),(int)($argv[2]/2),imagecolorallocate($i,17,27,24));ob_start();$argv[3]==='png'?imagepng($i):imagejpeg($i,null,90);echo base64_encode(ob_get_clean());`;
+  const r = spawnSync(PHP, ["-r", code, String(width), String(height), type], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  if (r.status !== 0) throw new Error(r.stderr || r.stdout);
+  return Buffer.from(r.stdout, "base64");
+}
+
+export function gdAvailable() {
+  return spawnSync(PHP, ["-r", "exit(extension_loaded('gd') ? 0 : 1);"]).status === 0;
+}
+
 export function phpAvailable() {
   return spawnSync(PHP, ["-v"], { encoding: "utf8" }).status === 0;
 }
@@ -103,7 +127,9 @@ export async function startBackOffice() {
   const app = join(dir, "gestion");
   cpSync(join(ROOT, "gestion"), app, {
     recursive: true,
-    filter: (p) => !/(config\.php|\.sqlite|mails\.log)$/.test(p),
+    // Ni configuration, ni base, ni photos envoyées en local (seul uploads/.htaccess est copié)
+    filter: (p) =>
+      !/(config\.php|\.sqlite|mails\.log)$/.test(p) && !/[\\/]uploads[\\/](?!\.htaccess$)[^\\/]+/.test(p),
   });
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;

@@ -7,6 +7,7 @@ import {
   PHONE_PATTERN,
   useBotGuard,
 } from "../components/useFormSubmit";
+import { mediaToPhoto, useSlotPhoto } from "../data/media";
 import { photoSrc, photoSrcSet, realisations, teamPhotos } from "../data/photos";
 import { useI18n } from "../i18n";
 import { fr } from "../i18n/fr";
@@ -23,6 +24,8 @@ const lifePhotos = [
 function CareersPage() {
   const { t } = useI18n();
   const page = t.careers;
+  const customHero = useSlotPhoto("careers.hero");
+  const hero = customHero ? mediaToPhoto(customHero) : heroPhoto;
   const [searchParams] = useSearchParams();
   const sent = searchParams.get("candidature") === "envoyee";
   const [cvName, setCvName] = useState("");
@@ -72,11 +75,11 @@ function CareersPage() {
       <section className="jean-jaures-hero careers-hero">
         <img
           className="jean-jaures-hero-image"
-          src={photoSrc(heroPhoto, "large")}
-          srcSet={photoSrcSet(heroPhoto)}
+          src={photoSrc(hero, "large")}
+          srcSet={photoSrcSet(hero)}
           sizes="100vw"
-          alt={page.heroAlt}
-          style={{ objectPosition: "center 35%" }}
+          alt={customHero?.alt || page.heroAlt}
+          style={{ objectPosition: customHero ? "center" : "center 35%" }}
           fetchPriority="high"
         />
         <div className="jean-jaures-hero-shade" />

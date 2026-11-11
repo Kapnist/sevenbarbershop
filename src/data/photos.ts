@@ -11,14 +11,43 @@ export interface Photo {
   /** Largeur réelle du grand fichier, pour un srcset exact. */
   largeWidth: number;
   position?: string;
+  /** Photo choisie dans la médiathèque de l'espace gérant (remplace fichiers et textes d'origine). */
+  custom?: {
+    src: string;
+    srcSet: string;
+    large: string;
+    alt: string;
+    title: string;
+    caption: string;
+  };
 }
 
 export function photoSrc(photo: Photo, size: "small" | "large" = "small"): string {
+  if (photo.custom) return size === "small" ? photo.custom.src : photo.custom.large;
   return `${asset(photo.base)}-${size === "small" ? 640 : 1200}.webp`;
 }
 
 export function photoSrcSet(photo: Photo): string {
+  if (photo.custom) return photo.custom.srcSet;
   return `${photoSrc(photo)} 640w, ${photoSrc(photo, "large")} ${photo.largeWidth}w`;
+}
+
+export interface PhotoText {
+  alt: string;
+  title: string;
+  caption?: string;
+}
+
+/** Textes d'une photo : ceux saisis dans la médiathèque, sinon ceux des dictionnaires de langue. */
+export function photoText(photo: Photo, photos: Dictionary["photos"]): PhotoText {
+  if (photo.custom) {
+    return {
+      alt: photo.custom.alt || photo.custom.title,
+      title: photo.custom.title || photo.custom.alt || "Seven Barbershop",
+      caption: photo.custom.caption || undefined,
+    };
+  }
+  return photos[photo.id] as PhotoText;
 }
 
 export const realisations: Photo[] = [

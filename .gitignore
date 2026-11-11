@@ -23,3 +23,6 @@ gestion/data/*.sqlite
 # Captures et résultats des tests
 test-results/
 gestion/data/mails.log
+# Médiathèque : les photos envoyées restent sur chaque serveur
+gestion/uploads/*
+!gestion/uploads/.htaccess
