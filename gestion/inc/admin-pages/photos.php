@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 $slots = array_filter(media_slots(), fn($key) => can_edit_slot($user, $key), ARRAY_FILTER_USE_KEY);
-$library = media_all();
+$library = media_visible_for($user);
 $back = admin_url('photos');
 $siteRoot = '../../';
 

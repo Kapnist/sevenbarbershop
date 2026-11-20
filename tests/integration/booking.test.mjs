@@ -419,6 +419,50 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.equal(bo.sql("SELECT status FROM appointments WHERE ref = 'PORT01'")[0].status, "done");
   });
 
+  test("statistiques : le propriétaire retire puis rend au salon l'accès à ses statistiques", async () => {
+    const [anatole] = bo.sql("SELECT id FROM salons WHERE slug = 'anatole-france'");
+    bo.sql("DELETE FROM login_attempts");
+    const { session } = await bo.login("anatole@example.com", "motdepasse-anatole");
+    let page = (await session.get("/admin/index.php?p=stats")).text;
+    assert.match(page, /p=stats/, "lien Statistiques présent au départ");
+
+    const blocked = await admin.action({ action: "stats_access", id: String(anatole.id), allow: "0" }, "comptes");
+    assert.match(blocked, /ne voit plus ses statistiques/);
+    page = (await session.get("/admin/index.php?p=stats")).text;
+    assert.doesNotMatch(page, /href="index\.php\?p=stats"/, "plus de lien Statistiques dans le menu");
+    assert.doesNotMatch(page, /Chiffre d'affaires estimé/, "adresse de la page tapée à la main : renvoyé vers l'agenda");
+
+    const allowed = await admin.action({ action: "stats_access", id: String(anatole.id), allow: "1" }, "comptes");
+    assert.match(allowed, /voit maintenant ses statistiques/);
+    page = (await session.get("/admin/index.php?p=stats")).text;
+    assert.match(page, /Chiffre d'affaires estimé/);
+  });
+
+  test("médiathèque : un salon ne voit ni ne modifie les photos des autres", async () => {
+    const [anatole] = bo.sql("SELECT id FROM salons WHERE slug = 'anatole-france'");
+    await admin.get("/admin/index.php?p=medias"); // crée la colonne salon_id si besoin
+    const insert = (base, salonId) =>
+      bo.sql(
+        `INSERT INTO media (base, ext, width, height, small_width, alt, title, caption, original_name, created_at, salon_id)
+         VALUES ('uploads/test/${base}', 'webp', 1600, 1000, 640, '${base}', '', '', '${base}.webp', datetime('now'), ${salonId ?? "NULL"})`,
+      );
+    insert("photo-du-patron", null);
+    insert("photo-anatole", anatole.id);
+    const [owners] = bo.sql("SELECT id FROM media WHERE base = 'uploads/test/photo-du-patron'");
+    bo.sql("DELETE FROM login_attempts");
+    const { session } = await bo.login("anatole@example.com", "motdepasse-anatole");
+    const { text } = await session.get("/admin/index.php?p=medias");
+    assert.match(text, /photo-anatole/);
+    assert.doesNotMatch(text, /photo-du-patron/);
+    const refused = await session.action({ action: "media_update", id: String(owners.id), alt: "piraté", title: "", caption: "" }, "medias");
+    assert.match(refused, /Photo introuvable/);
+    assert.equal(bo.sql(`SELECT alt FROM media WHERE id = ${owners.id}`)[0].alt, "photo-du-patron");
+    const { text: ownerView } = await admin.get("/admin/index.php?p=medias");
+    assert.match(ownerView, /photo-du-patron/);
+    assert.match(ownerView, /photo-anatole/);
+    bo.sql("DELETE FROM media WHERE base LIKE 'uploads/test/%'");
+  });
+
   test("le serveur PHP n'a journalisé aucune erreur", () => {
     assert.doesNotMatch(bo.log, PHP_ERRORS);
   });

@@ -198,7 +198,12 @@ describe("Médiathèque et photos du site", { skip }, () => {
     await owner.action({ action: "admin_save", id: "0", name: "Resp", email: "resp@example.com", password: "motdepasse-resp", salon_id: String(salonId) }, "comptes");
     manager = (await bo.login("resp@example.com", "motdepasse-resp")).session;
     bo.sql("DELETE FROM login_attempts");
-    const m = bo.sql("SELECT id FROM media ORDER BY id LIMIT 1")[0];
+    // Le responsable choisit parmi les photos déjà sur les pages de son salon (ou qu'il envoie lui-même)
+    const m = bo.sql("SELECT media_id AS id FROM media_slots WHERE slot LIKE 'anatole-france.%' AND media_id > 0 ORDER BY id LIMIT 1")[0];
+    assert.ok(m, "une photo est déjà sur une page d'Anatole France");
+    const foreign = bo.sql(
+      "SELECT id FROM media WHERE id NOT IN (SELECT media_id FROM media_slots WHERE slot LIKE 'anatole-france.%') ORDER BY id LIMIT 1",
+    )[0];
 
     const { text: photos } = await manager.get("/admin/index.php?p=photos");
     assert.match(photos, /id="slot-anatole-france\.hero"/);
@@ -211,6 +216,10 @@ describe("Médiathèque et photos du site", { skip }, () => {
     assert.match(ok, /Photo remplacée/);
     const added = await manager.action({ action: "slot_add", slot: "anatole-france.gallery", "media[]": String(m.id) }, "photos");
     assert.match(added, /déjà dans la galerie/, "une même photo n'est pas ajoutée deux fois");
+    if (foreign) {
+      const other = await manager.action({ action: "slot_add", slot: "anatole-france.gallery", "media[]": String(foreign.id) }, "photos");
+      assert.match(other, /Photo introuvable/, "pas les photos des autres salons ou du propriétaire");
+    }
     const del = await manager.action({ action: "media_delete", id: String(m.id) }, "medias");
     assert.match(del, /Seul le propriétaire/);
   });

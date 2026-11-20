@@ -45,6 +45,18 @@ function overview_hidden_ids(): array
     return array_values(array_filter(array_map('intval', explode(',', (string) setting('overview_hidden', '')))));
 }
 
+/** Salons dont le compte n'a pas accès à ses statistiques (choix du propriétaire). */
+function stats_blocked_ids(): array
+{
+    return array_values(array_filter(array_map('intval', explode(',', (string) setting('stats_blocked', '')))));
+}
+
+/** Le compte peut-il ouvrir la page Statistiques ? Toujours pour le propriétaire. */
+function can_see_stats(array $user): bool
+{
+    return $user['is_owner'] || !in_array((int) $user['salon_id'], stats_blocked_ids(), true);
+}
+
 /* ---------- Horaires ---------- */
 
 function weekly_hours(int $salonId): array

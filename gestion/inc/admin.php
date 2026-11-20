@@ -149,7 +149,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=11">
+<link rel="stylesheet" href="admin.css?v=12">
 </head>
 <body class="admin">
 <header class="topbar">
@@ -175,7 +175,8 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <aside class="sidebar" id="sidebar">
   <nav aria-label="Administration">
     <?php foreach (ADMIN_NAV as $key => [$label, $path]):
-        if (in_array($key, OWNER_PAGES, true) && !$user['is_owner']) continue; ?>
+        if (in_array($key, OWNER_PAGES, true) && !$user['is_owner']) continue;
+        if ($key === 'stats' && !can_see_stats($user)) continue; ?>
       <a href="<?= e(admin_url($key)) ?>"<?= $key === $active ? ' aria-current="page"' : '' ?>>
         <?= icon($path) ?><span><?= e($label) ?></span>
         <?php if ($key === 'rdv' && $pending): ?><b class="badge" title="Réservations en ligne des dernières 24 h"><?= $pending ?></b><?php endif; ?>

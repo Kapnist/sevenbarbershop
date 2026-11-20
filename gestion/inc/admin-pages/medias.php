@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-$items = media_all();
+$items = media_visible_for($user);
 $usage = media_usage();
 $slots = media_slots();
 $back = admin_url('medias');
@@ -36,7 +36,7 @@ admin_header('Médiathèque', 'medias', $user, $salon);
 </section>
 
 <div class="chips media-filters">
-  <a class="chip<?= $filter !== 'unused' ? ' on' : '' ?>" href="<?= e(admin_url('medias')) ?>">Toutes (<?= count(media_all()) ?>)</a>
+  <a class="chip<?= $filter !== 'unused' ? ' on' : '' ?>" href="<?= e(admin_url('medias')) ?>">Toutes (<?= count(media_visible_for($user)) ?>)</a>
   <a class="chip<?= $filter === 'unused' ? ' on' : '' ?>" href="<?= e(admin_url('medias', ['f' => 'unused'])) ?>">Non utilisées</a>
 </div>
 
@@ -44,7 +44,7 @@ admin_header('Médiathèque', 'medias', $user, $salon);
   <div class="empty-box">Aucune photo pour le moment. Ajoutez vos premières photos ci-dessus.</div>
 <?php else: ?>
 <div class="media-grid">
-  <?php foreach ($items as $m): $used = $usage[(int) $m['id']] ?? []; ?>
+  <?php foreach ($items as $m): $used = array_values(array_filter($usage[(int) $m['id']] ?? [], fn($slot) => can_edit_slot($user, $slot))); ?>
     <article class="media-card">
       <a href="<?= e('../' . media_path($m, 'large')) ?>" target="_blank" rel="noopener" class="media-thumb">
         <img src="<?= e('../' . media_path($m)) ?>" alt="<?= e($m['alt']) ?>" loading="lazy" width="<?= (int) $m['small_width'] ?>">
@@ -58,6 +58,7 @@ admin_header('Médiathèque', 'medias', $user, $salon);
           <p class="small"><span class="pill">Non utilisée</span></p>
         <?php endif; ?>
         <?php if (!$m['alt']): ?><p class="small"><span class="pill warn">Description manquante</span></p><?php endif; ?>
+        <?php if (can_edit_media($user, $m)): ?>
         <details>
           <summary class="link small">Modifier les textes</summary>
           <form method="post" class="stack tight">
@@ -69,6 +70,7 @@ admin_header('Médiathèque', 'medias', $user, $salon);
             <div><button class="btn small" type="submit">Enregistrer</button></div>
           </form>
         </details>
+        <?php endif; ?>
         <?php if ($user['is_owner']): ?>
           <form method="post" class="inline" data-confirm="Supprimer définitivement cette photo ?<?= $used ? ' Elle est utilisée sur le site : ces emplacements reprendront leur photo précédente.' : '' ?>">
             <?= csrf_field() ?><input type="hidden" name="action" value="media_delete"><input type="hidden" name="id" value="<?= (int) $m['id'] ?>"><input type="hidden" name="back" value="<?= e($back) ?>">

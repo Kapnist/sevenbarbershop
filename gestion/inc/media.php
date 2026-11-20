@@ -53,6 +53,12 @@ function ensure_media_schema(): void
     } catch (PDOException) {
         db()->exec('ALTER TABLE media_slots ADD COLUMN origin INT NULL');
     }
+    // Photo envoyée par un compte de salon : salon_id = ce salon (NULL : photo du propriétaire)
+    try {
+        db()->query('SELECT salon_id FROM media LIMIT 1');
+    } catch (PDOException) {
+        db()->exec('ALTER TABLE media ADD COLUMN salon_id INT NULL');
+    }
 }
 
 /* ---------- Emplacements du site ---------- */
@@ -244,6 +250,28 @@ function media_all(): array
 {
     ensure_media_schema();
     return q('SELECT * FROM media ORDER BY created_at DESC, id DESC')->fetchAll();
+}
+
+/**
+ * Photos qu'un compte peut voir : toutes pour le propriétaire ; pour un compte de salon,
+ * celles qu'il a envoyées et celles déjà affichées sur les pages de son salon. Jamais les autres.
+ */
+function media_visible_for(array $user): array
+{
+    if ($user['is_owner']) return media_all();
+    $salonId = (int) $user['salon_id'];
+    $inSlots = [];
+    foreach (array_keys(media_slots()) as $slot) {
+        if (!can_edit_slot($user, $slot)) continue;
+        foreach (slot_media($slot) as $row) if (!empty($row['id'])) $inSlots[(int) $row['id']] = true;
+    }
+    return array_values(array_filter(media_all(), fn($m) => (int) ($m['salon_id'] ?? 0) === $salonId || isset($inSlots[(int) $m['id']])));
+}
+
+/** Un compte de salon ne modifie que les photos qu'il a lui-même envoyées. */
+function can_edit_media(array $user, array $m): bool
+{
+    return $user['is_owner'] || (int) ($m['salon_id'] ?? 0) === (int) $user['salon_id'];
 }
 
 /** Supprime une photo de la médiathèque, de ses emplacements et du disque. */

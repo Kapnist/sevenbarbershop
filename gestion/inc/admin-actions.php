@@ -405,6 +405,18 @@ function run_admin_action(string $action, array $user, array $salon): void
             break;
         }
 
+        case 'stats_access': {
+            if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
+            $s = salon_by_id(post_int('id'));
+            if (!$s) throw new InvalidArgumentException('Salon introuvable.');
+            $allow = post('allow') === '1';
+            $blocked = stats_blocked_ids();
+            $blocked = $allow ? array_values(array_diff($blocked, [(int) $s['id']])) : array_values(array_unique([...$blocked, (int) $s['id']]));
+            setting_set('stats_blocked', implode(',', $blocked));
+            flash($allow ? "Le compte de {$s['name']} voit maintenant ses statistiques." : "Le compte de {$s['name']} ne voit plus ses statistiques.");
+            break;
+        }
+
         case 'overview_toggle': {
             if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
             $s = salon_by_id(post_int('id'));
@@ -527,6 +539,10 @@ function run_admin_action(string $action, array $user, array $salon): void
                 break;
             }
             $ids = array_map(fn($m) => (int) $m['id'], $stored);
+            // Photo envoyée par un compte de salon : elle n'est visible que de ce salon (et du propriétaire)
+            if (!$user['is_owner']) {
+                foreach ($ids as $mid) q('UPDATE media SET salon_id = ? WHERE id = ?', [(int) $user['salon_id'], $mid]);
+            }
             if ($slot !== '') {
                 $replacing = post_int('link') > 0 || post('origin') !== '';
                 if (media_slots()[$slot]['type'] === 'single') {
@@ -548,7 +564,7 @@ function run_admin_action(string $action, array $user, array $salon): void
 
         case 'media_update': {
             $m = media_get(post_int('id'));
-            if (!$m) throw new InvalidArgumentException('Photo introuvable.');
+            if (!$m || !can_edit_media($user, $m)) throw new InvalidArgumentException('Photo introuvable.');
             q('UPDATE media SET alt = ?, title = ?, caption = ? WHERE id = ?', [
                 mb_substr(post('alt'), 0, 250), mb_substr(post('title'), 0, 120), mb_substr(post('caption'), 0, 250), $m['id'],
             ]);
@@ -571,6 +587,9 @@ function run_admin_action(string $action, array $user, array $salon): void
             if (!can_edit_slot($user, $slot)) throw new InvalidArgumentException("Vous ne pouvez pas modifier cet emplacement.");
             $ids = array_values(array_filter(array_map('intval', (array) ($_POST['media'] ?? []))));
             if (!$ids) throw new InvalidArgumentException('Choisissez au moins une photo.');
+            // Un compte de salon ne choisit que parmi les photos qu'il peut voir
+            $visible = array_map(fn($m) => (int) $m['id'], media_visible_for($user));
+            if (array_diff($ids, $visible)) throw new InvalidArgumentException('Photo introuvable.');
             $def = media_slots()[$slot];
             if ($def['type'] === 'gallery' && (post_int('link') > 0 || post('origin') !== '')) {
                 // Une seule photo de la galerie est remplacée, les autres restent en place

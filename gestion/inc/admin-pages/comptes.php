@@ -41,6 +41,23 @@ if ($missing): ?>
   <p class="muted small">Salons sans compte : <?= e(implode(', ', array_map(fn($s) => $s['name'], $missing))) ?>.</p>
 <?php endif; ?>
 
+<section class="panel">
+  <div class="panel-head"><h2>Statistiques visibles par chaque salon</h2></div>
+  <p class="muted small">Chaque salon ne voit jamais que ses propres chiffres. Cliquez sur le bouton d’un salon pour lui retirer ou lui rendre sa page Statistiques. Vous, vous voyez toujours tout.</p>
+  <div class="stats-access">
+    <?php $blocked = stats_blocked_ids(); foreach (salons_list() as $s): $allowed = !in_array((int) $s['id'], $blocked, true); ?>
+      <form method="post" class="stats-access-row">
+        <?= csrf_field() ?><input type="hidden" name="action" value="stats_access"><input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
+        <input type="hidden" name="allow" value="<?= $allowed ? '0' : '1' ?>"><input type="hidden" name="back" value="<?= e($back) ?>">
+        <span><b><?= e($s['name']) ?></b> <span class="muted small"><?= e($s['city']) ?></span></span>
+        <button type="submit" class="att <?= $allowed ? 'att-done is-on-soft' : '' ?>" aria-pressed="<?= $allowed ? 'true' : 'false' ?>"
+          title="<?= $allowed ? 'Retirer l\'accès à ses statistiques' : 'Donner accès à ses statistiques' ?>">
+          <?= $allowed ? '✓ Voit ses statistiques' : '✗ Statistiques masquées' ?></button>
+      </form>
+    <?php endforeach; ?>
+  </div>
+</section>
+
 <div class="cards">
   <?php foreach ($admins as $a): ?>
     <details class="panel staff-card">

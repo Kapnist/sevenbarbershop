@@ -480,3 +480,9 @@ dialog.modal.wide { width: min(920px, calc(100vw - 1.5rem)); max-width: none; }
 .hidden-salons .link, td .link.muted { font-weight: 600; }
 .nowrap form.inline { display: inline-block; margin-left: .7rem; vertical-align: middle; }
 td.nowrap .btn { vertical-align: middle; }
+
+/* Comptes des salons : accès de chaque salon à ses statistiques */
+.stats-access { display: grid; gap: .4rem; }
+.stats-access-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dashed var(--line); }
+.stats-access-row:last-child { border-bottom: 0; }
+.att.is-on-soft { background: #e1efdc; border-color: #9cc48f; color: #2d5a25; }

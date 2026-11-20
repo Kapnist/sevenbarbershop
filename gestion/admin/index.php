@@ -12,6 +12,7 @@ $salon = current_salon($user);
 // Le propriétaire arrive sur la vue d'ensemble de ses salons, un responsable sur l'agenda de son salon
 $page = $_GET['p'] ?? ($user['is_owner'] ? 'global' : 'agenda');
 if (!array_key_exists($page, ADMIN_NAV) || (in_array($page, OWNER_PAGES, true) && !$user['is_owner'])) $page = 'agenda';
+if ($page === 'stats' && !can_see_stats($user)) $page = 'agenda';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require dirname(__DIR__) . '/inc/admin-actions.php';
