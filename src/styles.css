@@ -10,6 +10,22 @@
   --sans: Arial, Helvetica, sans-serif;
 }
 
+/* Chatbot (widget n8n) : il est conçu sur fond clair. Avec le « color-scheme: dark » du site,
+   le texte tapé dans son champ blanc devenait blanc, donc invisible avant l'envoi. */
+.chat-window-wrapper {
+  color-scheme: light;
+}
+
+.chat-window-wrapper .chat-inputs textarea {
+  color: var(--green) !important;
+  caret-color: var(--green);
+}
+
+.chat-window-wrapper .chat-inputs textarea::placeholder {
+  color: #6b6f6c;
+  opacity: 1;
+}
+
 * {
   box-sizing: border-box;
 }
