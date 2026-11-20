@@ -20,6 +20,37 @@
   scrim?.addEventListener('click', () => setSidebar(false));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setSidebar(false); });
 
+  /* ---------- Agenda en direct (tablette du salon) ----------
+     Chaque minute, l'agenda demande au serveur si la journée a changé (réservation en ligne,
+     annulation, rendez-vous pointé ailleurs) et se recharge seulement dans ce cas, sans
+     interrompre une saisie : pas de rechargement si une fenêtre est ouverte ou un champ en cours. */
+  const live = document.querySelector('[data-live]');
+  if (live) {
+    const KEY = 'seven-agenda-scroll';
+    const scroller = document.scrollingElement || document.documentElement;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+      if (saved && saved.url === location.href) { scroller.scrollTop = saved.y; live.scrollLeft = saved.x || 0; }
+      sessionStorage.removeItem(KEY);
+    } catch (e) { /* stockage indisponible : on garde la position par défaut */ }
+    const current = live.dataset.sig;
+    const busy = () => document.querySelector('dialog[open]') || (document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName));
+    const check = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await fetch(live.dataset.live, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        if (!res.ok) return;
+        const { sig } = await res.json();
+        if (sig !== current && !busy()) {
+          try { sessionStorage.setItem(KEY, JSON.stringify({ url: location.href, y: scroller.scrollTop, x: live.scrollLeft })); } catch (e) { /* sans stockage */ }
+          location.reload();
+        }
+      } catch (e) { /* réseau coupé : on réessaie à la minute suivante */ }
+    };
+    setInterval(check, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+  }
+
   /* ---------- Formulaires envoyés dès qu'un choix change (salon, date, statut) ---------- */
   $$('form[data-autosubmit]').forEach(f => f.addEventListener('change', () => f.submit()));
   $$('form[data-autosubmit-select] select').forEach(sel => sel.addEventListener('change', () => sel.form.submit()));

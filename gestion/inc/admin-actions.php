@@ -476,8 +476,11 @@ function run_admin_action(string $action, array $user, array $salon): void
             if (!$id && strlen($password) < 10) throw new InvalidArgumentException('Mot de passe de 10 caractères minimum.');
             if ($password !== '' && strlen($password) < 10) throw new InvalidArgumentException('Mot de passe de 10 caractères minimum.');
             if ($id) {
+                $scopeBefore = (int) q('SELECT COALESCE(salon_id, 0) FROM admins WHERE id = ?', [$id])->fetchColumn();
                 q('UPDATE admins SET name = ?, email = ?, salon_id = ? WHERE id = ?', [$name, $email, $scope ?: null, $id]);
+                // Mot de passe changé, ou compte rattaché à un autre salon : tous ses appareils se reconnectent
                 if ($password !== '') q('UPDATE admins SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $id]);
+                if ($password !== '' || $scopeBefore !== $scope) forget_all_devices($id);
             } else {
                 q('INSERT INTO admins (name, email, password_hash, salon_id, created_at) VALUES (?, ?, ?, ?, ?)', [$name, $email, password_hash($password, PASSWORD_DEFAULT), $scope ?: null, now()->format('Y-m-d H:i:s')]);
             }
@@ -489,6 +492,7 @@ function run_admin_action(string $action, array $user, array $salon): void
             if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
             $id = post_int('id');
             if ($id === (int) $user['id']) throw new InvalidArgumentException('Vous ne pouvez pas supprimer votre propre accès.');
+            forget_all_devices($id);
             q('DELETE FROM admins WHERE id = ?', [$id]);
             flash('Accès supprimé.');
             break;
@@ -506,6 +510,7 @@ function run_admin_action(string $action, array $user, array $salon): void
                 if (strlen($new) < 10) throw new InvalidArgumentException('Le nouveau mot de passe doit contenir au moins 10 caractères.');
                 if ($new !== ($_POST['confirm'] ?? '')) throw new InvalidArgumentException('Les deux mots de passe ne correspondent pas.');
                 q('UPDATE admins SET password_hash = ? WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $u['id']]);
+                forget_all_devices((int) $u['id']);
             }
             q('UPDATE admins SET name = ?, email = ? WHERE id = ?', [mb_substr(post('name'), 0, 80), $email, $u['id']]);
             flash('Compte mis à jour.');

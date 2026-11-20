@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { json, phpAvailable, startBackOffice } from "../helpers/php-server.mjs";
+import { Session, json, phpAvailable, startBackOffice } from "../helpers/php-server.mjs";
 
 /** Date-heure de Paris (fuseau du back-office), décalée de N minutes : « 2026-11-10 18:30:00 ». */
 function parisTime(offsetMinutes = 0) {
@@ -461,6 +461,74 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.match(ownerView, /photo-du-patron/);
     assert.match(ownerView, /photo-anatole/);
     bo.sql("DELETE FROM media WHERE base LIKE 'uploads/test/%'");
+  });
+
+  test("tablette : « rester connecté » survit à la fermeture du navigateur, la déconnexion l'efface", async () => {
+    bo.sql("DELETE FROM login_attempts");
+    const tablet = new Session(bo.base);
+    const csrf = await tablet.csrf("/admin/login.php");
+    const { res } = await tablet.post("/admin/login.php", { csrf, email: "anatole@example.com", password: "motdepasse-anatole", remember: "on" });
+    assert.equal(res.status, 302);
+    const remember = tablet.cookies.get("seven_remember");
+    assert.match(remember ?? "", /^[a-f0-9]{24}\.[a-f0-9]{64}$/, "cookie de 30 jours posé");
+    assert.equal(bo.sql("SELECT COUNT(*) n FROM admin_tokens")[0].n, 1);
+
+    // Navigateur fermé puis rouvert : plus de session, seul le cookie « rester connecté » reste
+    const reopened = new Session(bo.base);
+    reopened.cookies.set("seven_remember", remember);
+    const { res: r2, text } = await reopened.get("/admin/index.php?p=agenda");
+    assert.equal(r2.status, 200, "pas renvoyé vers la connexion");
+    assert.match(text, /Anatole France/);
+    assert.notEqual(reopened.cookies.get("seven_remember"), remember, "le secret est renouvelé à chaque reconnexion");
+
+    // L'ancien cookie (copié) ne marche plus
+    const thief = new Session(bo.base);
+    thief.cookies.set("seven_remember", remember);
+    const { res: r3 } = await thief.get("/admin/index.php");
+    assert.equal(r3.status, 302, "ancien jeton refusé");
+
+    // Agenda en direct : l'empreinte de la journée change quand un rendez-vous change
+    const today = bo.sql("SELECT date('now', 'localtime') d")[0].d;
+    const sig1 = JSON.parse((await reopened.get(`/admin/index.php?p=agenda&d=${today}&check=1`)).text).sig;
+    assert.match(sig1, /^[a-f0-9]{32}$/);
+    const [anatole] = bo.sql("SELECT id FROM salons WHERE slug = 'anatole-france'");
+    bo.sql(`INSERT INTO blocks (salon_id, staff_id, start_at, end_at, note) VALUES (${anatole.id}, NULL, '${today} 07:00:00', '${today} 07:30:00', 'test')`);
+    const sig2 = JSON.parse((await reopened.get(`/admin/index.php?p=agenda&d=${today}&check=1`)).text).sig;
+    assert.notEqual(sig2, sig1, "nouvelle empreinte après un changement");
+    bo.sql("DELETE FROM blocks WHERE note = 'test'");
+
+    // Déconnexion : le jeton est supprimé, le cookie ne sert plus
+    const logoutCsrf = await reopened.csrf("/admin/index.php?p=agenda");
+    await reopened.post("/admin/logout.php", { csrf: logoutCsrf });
+    assert.equal(bo.sql("SELECT COUNT(*) n FROM admin_tokens")[0].n, 0);
+    const after = new Session(bo.base);
+    after.cookies.set("seven_remember", reopened.cookies.get("seven_remember"));
+    assert.equal((await after.get("/admin/index.php")).res.status, 302);
+  });
+
+  test("tablette : changer le mot de passe du salon déconnecte ses appareils", async () => {
+    bo.sql("DELETE FROM login_attempts");
+    const tablet = new Session(bo.base);
+    const csrf = await tablet.csrf("/admin/login.php");
+    await tablet.post("/admin/login.php", { csrf, email: "anatole@example.com", password: "motdepasse-anatole", remember: "on" });
+    assert.equal(bo.sql("SELECT COUNT(*) n FROM admin_tokens")[0].n, 1);
+    const [acc] = bo.sql("SELECT id, salon_id FROM admins WHERE email = 'anatole@example.com'");
+    await admin.action({ action: "admin_save", id: String(acc.id), name: "Anatole", email: "anatole@example.com", salon_id: String(acc.salon_id), password: "nouveau-mot-de-passe" }, "comptes");
+    assert.equal(bo.sql("SELECT COUNT(*) n FROM admin_tokens")[0].n, 0);
+    const reopened = new Session(bo.base);
+    reopened.cookies.set("seven_remember", tablet.cookies.get("seven_remember"));
+    assert.equal((await reopened.get("/admin/index.php")).res.status, 302);
+  });
+
+  test("tablette : icône d'écran d'accueil et mode plein écran", async () => {
+    const res = await fetch(`${bo.base}/admin/manifest.json`);
+    assert.equal(res.status, 200);
+    const manifest = await res.json();
+    assert.equal(manifest.display, "standalone");
+    for (const icon of manifest.icons) assert.equal((await fetch(`${bo.base}/admin/${icon.src}`)).status, 200, icon.src);
+    const { text } = await new Session(bo.base).get("/admin/login.php");
+    assert.match(text, /rel="manifest"/);
+    assert.match(text, /Rester connecté sur cet appareil/);
   });
 
   test("le serveur PHP n'a journalisé aucune erreur", () => {

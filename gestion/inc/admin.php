@@ -26,14 +26,112 @@ const ADMIN_NAV = [
 /** Pages réservées au propriétaire. */
 const OWNER_PAGES = ['global', 'salons', 'comptes'];
 
+/* ---------- « Rester connecté sur cet appareil » (tablette du salon) ---------- */
+
+const REMEMBER_COOKIE = 'seven_remember';
+const REMEMBER_DAYS = 30;
+
+/** Jetons de connexion durable : seul un hachage du secret est gardé en base. */
+function ensure_remember_schema(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $mysql = db_driver() === 'mysql';
+    $id = $mysql ? 'INT UNSIGNED AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    $fk = $mysql ? 'INT UNSIGNED' : 'INTEGER';
+    $tail = $mysql ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci' : '';
+    db()->exec("CREATE TABLE IF NOT EXISTS admin_tokens (
+        id $id,
+        admin_id $fk NOT NULL,
+        selector VARCHAR(24) NOT NULL UNIQUE,
+        token_hash VARCHAR(64) NOT NULL,
+        device VARCHAR(190) NOT NULL DEFAULT '',
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME NOT NULL
+    )$tail");
+}
+
+function https_request(): bool
+{
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+}
+
+function set_remember_cookie(string $value, int $expires): void
+{
+    setcookie(REMEMBER_COOKIE, $value, [
+        'expires' => $expires,
+        'path' => '/',
+        'secure' => https_request(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+/** Crée un jeton pour cet appareil (ou le renouvelle) et pose le cookie pour 30 jours. */
+function remember_device(int $adminId): void
+{
+    ensure_remember_schema();
+    $selector = bin2hex(random_bytes(12));
+    $validator = bin2hex(random_bytes(32));
+    $expires = time() + REMEMBER_DAYS * 86400;
+    q('DELETE FROM admin_tokens WHERE expires_at < ?', [now()->format('Y-m-d H:i:s')]);
+    q('INSERT INTO admin_tokens (admin_id, selector, token_hash, device, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)', [
+        $adminId, $selector, hash('sha256', $validator), mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 190),
+        date('Y-m-d H:i:s', $expires), now()->format('Y-m-d H:i:s'),
+    ]);
+    // Séparateur « . » : setcookie() n'encode pas ce caractère (« : » deviendrait « %3A »)
+    set_remember_cookie("$selector.$validator", $expires);
+}
+
+/** Oublie cet appareil (déconnexion). */
+function forget_device(): void
+{
+    $cookie = (string) ($_COOKIE[REMEMBER_COOKIE] ?? '');
+    if ($cookie !== '' && str_contains($cookie, '.')) {
+        ensure_remember_schema();
+        q('DELETE FROM admin_tokens WHERE selector = ?', [explode('.', $cookie, 2)[0]]);
+    }
+    set_remember_cookie('', time() - 3600);
+}
+
+/** Déconnecte tous les appareils d'un compte (mot de passe changé, accès supprimé). */
+function forget_all_devices(int $adminId): void
+{
+    ensure_remember_schema();
+    q('DELETE FROM admin_tokens WHERE admin_id = ?', [$adminId]);
+}
+
+/** Reconnecte l'appareil grâce à son cookie, si le jeton est valide (le secret est alors renouvelé). */
+function login_from_cookie(): bool
+{
+    $cookie = (string) ($_COOKIE[REMEMBER_COOKIE] ?? '');
+    if (!preg_match('/^([a-f0-9]{24})\.([a-f0-9]{64})$/', $cookie, $m)) return false;
+    ensure_remember_schema();
+    $row = q('SELECT * FROM admin_tokens WHERE selector = ?', [$m[1]])->fetch();
+    if (!$row || $row['expires_at'] < now()->format('Y-m-d H:i:s') || !hash_equals($row['token_hash'], hash('sha256', $m[2]))) {
+        if ($row) q('DELETE FROM admin_tokens WHERE id = ?', [$row['id']]);
+        set_remember_cookie('', time() - 3600);
+        return false;
+    }
+    q('DELETE FROM admin_tokens WHERE id = ?', [$row['id']]);
+    start_session();
+    session_regenerate_id(true);
+    $_SESSION['admin_id'] = (int) $row['admin_id'];
+    $_SESSION['admin_seen'] = time();
+    $_SESSION['remembered'] = true;
+    remember_device((int) $row['admin_id']);
+    return true;
+}
+
 function admin_user(): ?array
 {
     start_session();
-    if (empty($_SESSION['admin_id'])) return null;
-    // Expiration après 8 h d'inactivité
-    if (($_SESSION['admin_seen'] ?? 0) < time() - 8 * 3600) {
+    if (empty($_SESSION['admin_id']) && !login_from_cookie()) return null;
+    // Expiration après 8 h d'inactivité, sauf sur un appareil où l'on a choisi de rester connecté
+    if (empty($_SESSION['remembered']) && ($_SESSION['admin_seen'] ?? 0) < time() - 8 * 3600) {
         unset($_SESSION['admin_id']);
-        return null;
+        if (!login_from_cookie()) return null;
     }
     $_SESSION['admin_seen'] = time();
     $u = q('SELECT id, name, email, salon_id FROM admins WHERE id = ?', [$_SESSION['admin_id']])->fetch();
@@ -88,7 +186,7 @@ function login_blocked(): bool
     return (int) q('SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND attempted_at > ?', [client_ip(), $since])->fetchColumn() >= 5;
 }
 
-function attempt_login(string $email, string $password): bool
+function attempt_login(string $email, string $password, bool $remember = false): bool
 {
     q('DELETE FROM login_attempts WHERE attempted_at < ?', [now()->modify('-1 day')->format('Y-m-d H:i:s')]);
     if (login_blocked()) return false;
@@ -104,6 +202,10 @@ function attempt_login(string $email, string $password): bool
     session_regenerate_id(true);
     $_SESSION['admin_id'] = (int) $u['id'];
     $_SESSION['admin_seen'] = time();
+    if ($remember) {
+        $_SESSION['remembered'] = true;
+        remember_device((int) $u['id']);
+    }
     q('DELETE FROM login_attempts WHERE ip = ?', [client_ip()]);
     return true;
 }
@@ -149,7 +251,16 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=12">
+<link rel="stylesheet" href="admin.css?v=13">
+<!-- Icône sur l'écran d'accueil de la tablette : ouvre l'espace gérant en plein écran, comme une application -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111b18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Seven gérant">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 </head>
 <body class="admin">
 <header class="topbar">
@@ -200,7 +311,7 @@ function admin_footer(): void
 {
     ?>
 </main>
-<script src="admin.js?v=9" defer></script>
+<script src="admin.js?v=10" defer></script>
 </body>
 </html>
 <?php

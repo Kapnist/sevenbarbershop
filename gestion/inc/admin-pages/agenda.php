@@ -16,6 +16,14 @@ $blocks = q('SELECT * FROM blocks WHERE salon_id = ? AND start_at < ? AND end_at
     $salonId, $dt->modify('+1 day')->format('Y-m-d') . ' 00:00:00', "$date 00:00:00",
 ])->fetchAll();
 
+// Mise à jour automatique (tablette du salon) : empreinte de la journée, demandée chaque minute par admin.js.
+// La page ne se recharge que si un rendez-vous, un statut ou un blocage a changé.
+$sig = [];
+foreach (day_appointments($salonId, $date, true) as $a) $sig[] = [$a['id'], $a['status'], $a['start_at'], $a['end_at'], $a['staff_id'], $a['client_name'], $a['service_name']];
+foreach ($blocks as $b) $sig[] = ['b', $b['id'], $b['start_at'], $b['end_at'], $b['staff_id']];
+$liveSig = md5((string) json_encode([$sig, $schedule, array_column($staff, 'id')]));
+if (isset($_GET['check'])) json_out(['sig' => $liveSig]);
+
 // Colonnes : les barbiers + « Non attribué » s'il y a des rendez-vous sans barbier
 $columns = array_map(fn($s) => ['id' => (int) $s['id'], 'name' => $s['name'], 'color' => $s['color']], $staff);
 $staffIds = array_column($columns, 'id');
@@ -86,7 +94,7 @@ admin_header('Agenda', 'agenda', $user, $salon);
 <?php if (!$columns): ?>
   <div class="empty-box">Ajoutez d'abord les barbiers de ce salon dans <a href="<?= e(admin_url('equipe')) ?>">Barbiers</a>.</div>
 <?php else: ?>
-<div class="agenda" style="--cols: <?= count($columns) ?>; --h: <?= $px($gEnd) ?>px;">
+<div class="agenda" style="--cols: <?= count($columns) ?>; --h: <?= $px($gEnd) ?>px;" data-live="<?= e(admin_url('agenda', ['d' => $date, 'check' => 1])) ?>" data-sig="<?= e($liveSig) ?>">
   <div class="agenda-head">
     <div class="agenda-corner"></div>
     <?php foreach ($columns as $c): ?>
