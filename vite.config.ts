@@ -118,7 +118,8 @@ function renderHtaccess({ SITE_URL, REDIRECT_TO_SITE_URL }: Seo): string {
     : "";
 
   return `# Généré à la compilation par vite.config.ts : ne pas modifier à la main.
-Options -Indexes
+# MultiViews désactivé : sinon Apache sert « anatole-france.html » lui-même et l'ajoute aux redirections.
+Options -Indexes -MultiViews
 
 <IfModule mod_headers.c>
 ${headers}
@@ -150,10 +151,13 @@ ${headers}
   RewriteEngine On
   # HTTPS obligatoire (méthode recommandée par OVH pour l'hébergement mutualisé).
   RewriteCond %{SERVER_PORT} 80
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 ${hostRedirect}  # Réservation et espace gérant (PHP) : le dossier /gestion a ses propres règles.
   RewriteRule ^gestion$ /gestion/ [R=301,L]
   RewriteRule ^gestion/ - [L]
+  # Barre finale en trop (« /salons/le-port/ », lien partagé recopié) : redirigée vers l'adresse sans barre.
+  RewriteCond %{REQUEST_URI} !^/gestion/
+  RewriteRule ^(.+)/$ /$1 [R=301,L]
   # Adresses propres : /salons sert salons.html.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME}.html -f
@@ -210,6 +214,7 @@ export default defineConfig(async ({ mode }) => {
   if (siteUrl) {
     (globalThis as { SEVEN_SITE_URL?: string }).SEVEN_SITE_URL = siteUrl;
   }
+  (globalThis as { SEVEN_BOOKING_API?: string }).SEVEN_BOOKING_API = env.VITE_BOOKING_API ?? "";
   const seo: Seo = await import("./src/data/seo");
   const { renderChatbotInfo } = await import("./src/data/chatbotInfo");
 

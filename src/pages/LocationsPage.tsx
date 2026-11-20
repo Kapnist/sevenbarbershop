@@ -3,12 +3,17 @@ import PageIntro from "../components/PageIntro";
 import { salonLocations } from "../data/salons";
 import { useI18n } from "../i18n";
 import BookingLink from "../components/BookingLink";
+import { asset } from "../asset";
+import { salonSlug } from "../data/booking";
+import { slotPhoto, useMedia } from "../data/media";
 
 const cities = ["Saint-Étienne", "Nice"];
 
 function LocationsPage() {
   const { t, formatHours } = useI18n();
   const page = t.locations;
+  // Photo principale de chaque salon : celle choisie dans l'espace gérant, sinon celle d'origine
+  const media = useMedia();
 
   return (
     <>
@@ -46,6 +51,26 @@ function LocationsPage() {
                         <span className="location-index">
                           {String(index + 1).padStart(2, "0")}
                         </span>
+                        {location.image && (
+                          <Link
+                            className="location-photo"
+                            to={location.detailsPath ?? "/salons"}
+                            tabIndex={-1}
+                            aria-hidden="true"
+                          >
+                            <img
+                              src={
+                                slotPhoto(media, `${salonSlug(location)}.hero`)
+                                  ?.src ?? asset(location.image)
+                              }
+                              alt={t.home.cardAlt(location.name, location.city)}
+                              loading="lazy"
+                              decoding="async"
+                              width={240}
+                              height={170}
+                            />
+                          </Link>
+                        )}
                         <div>
                           <h3>{location.name}</h3>
                           <p>

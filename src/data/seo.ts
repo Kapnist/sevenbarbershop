@@ -34,6 +34,23 @@ function shareImage(image: string): string {
   const [, , folder, file] = image.split("/");
   return `/images/partage/${folder}-${file.replace(/\.[^.]+$/, "")}.jpg`;
 }
+/**
+ * API de réservation sur le même domaine (« /gestion/api », version OVH) : l'aperçu d'une page salon
+ * est alors servi par gestion/api/share-image.php, qui reprend la photo principale choisie dans
+ * l'espace gérant (sinon l'image fixe ci-dessus). Sans PHP (GitHub Pages), l'image fixe est utilisée.
+ */
+const BOOKING_API: string =
+  (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_BOOKING_API ||
+  (globalThis as { SEVEN_BOOKING_API?: string }).SEVEN_BOOKING_API ||
+  "";
+
+function salonShareImage(salon: SalonLocation, fallback: string): string {
+  const slug = salon.detailsPath?.split("/").pop();
+  if (!slug || !BOOKING_API.startsWith("/")) return fallback;
+  const name = fallback.replace(/^\/images\/partage\//, "").replace(/\.jpg$/, "");
+  return `${BOOKING_API}/share-image.php?salon=${slug}&f=${name}`;
+}
+
 const LOGO = "/images/logo-seven.webp";
 
 interface PageSeo {
@@ -299,7 +316,8 @@ export function getHeadTags(path: string): HeadTags {
   const known = pageSeo[path];
   const seo = known ?? notFoundSeo;
   const salon = salonForPath(path);
-  const image = absoluteUrl(shareImage(seo.image ?? salon?.image ?? DEFAULT_IMAGE));
+  const staticImage = shareImage(seo.image ?? salon?.image ?? DEFAULT_IMAGE);
+  const image = absoluteUrl(salon && !seo.image ? salonShareImage(salon, staticImage) : staticImage);
   const url = absoluteUrl(known ? path : "/");
 
   return {

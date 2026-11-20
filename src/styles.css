@@ -1092,7 +1092,7 @@ h2 {
 
 .location-card {
   display: grid;
-  grid-template-columns: 60px 1fr auto;
+  grid-template-columns: 60px 240px 1fr auto;
   align-items: center;
   gap: 16px;
   min-height: 96px;
@@ -1102,6 +1102,26 @@ h2 {
 .location-index {
   color: var(--gold);
   font-family: var(--serif);
+}
+
+/* Photo principale du salon dans la liste « Nos salons » */
+.location-photo {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.location-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 24 / 17;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.location-card:hover .location-photo img {
+  transform: scale(1.04);
 }
 
 .location-card h3 {
@@ -2421,6 +2441,15 @@ html:has(.lightbox[open]) {
     gap: 10px;
     min-height: 82px;
     padding: 14px 0;
+  }
+
+  .location-photo {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .location-photo img {
+    aspect-ratio: 16 / 9;
   }
 
   .location-card h3 {
