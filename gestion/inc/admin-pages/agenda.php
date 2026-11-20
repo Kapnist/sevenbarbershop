@@ -158,7 +158,7 @@ admin_header('Agenda', 'agenda', $user, $salon);
     <?php endforeach; ?>
   </div>
 </div>
-<p class="legend"><span class="lg web"></span> Réservé en ligne <span class="lg admin"></span> Ajouté au salon <span class="lg done"></span> Venu <span class="lg noshow"></span> Absent <span class="lg blocked"></span> Bloqué · Cliquez sur une case vide pour ajouter un rendez-vous ou bloquer un créneau.</p>
+<p class="legend"><span class="lg web"></span> Réservé en ligne <span class="lg admin"></span> Ajouté au salon <span class="lg done"></span> Venu <span class="lg noshow"></span> Pas venu <span class="lg blocked"></span> Bloqué · Cliquez sur une case vide pour ajouter un rendez-vous ou bloquer un créneau.</p>
 <?php endif; ?>
 
 <!-- Nouveau rendez-vous / blocage -->
@@ -236,7 +236,7 @@ admin_header('Agenda', 'agenda', $user, $salon);
   </div>
   <div class="quick">
     <a class="btn ghost" data-a="tel" href="#">Appeler</a>
-    <?php foreach (['done' => 'Venu', 'noshow' => 'Absent', 'cancelled' => 'Annuler le RDV'] as $st => $label): ?>
+    <?php foreach (['done' => '✓ Venu', 'noshow' => '✗ Pas venu', 'cancelled' => 'Annuler le RDV'] as $st => $label): ?>
       <form method="post" class="inline" <?= $st === 'cancelled' ? 'data-confirm="Annuler ce rendez-vous ? Le créneau redevient réservable."' : '' ?>>
         <?= csrf_field() ?><input type="hidden" name="action" value="appt_status"><input type="hidden" name="status" value="<?= $st ?>">
         <input type="hidden" name="id" data-a="id"><input type="hidden" name="back" value="<?= e($back) ?>">

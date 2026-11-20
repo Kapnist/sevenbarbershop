@@ -85,7 +85,7 @@
   // Détail d'un rendez-vous
   const dlgAppt = $('[data-dlg-appt]');
   if (dlgAppt) {
-    const statusLabels = { confirmed: 'Confirmé', done: 'Venu', noshow: 'Absent', cancelled: 'Annulé' };
+    const statusLabels = { confirmed: 'Confirmé', done: 'Venu', noshow: 'Pas venu', cancelled: 'Annulé' };
     const sourceLabels = { web: 'réservé en ligne', admin: 'ajouté au salon', ai: "réservé par l'assistant IA" };
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-appt]');

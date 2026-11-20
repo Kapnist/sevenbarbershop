@@ -28,24 +28,6 @@ $first = new DateTimeImmutable('first day of this month');
 };
 $toNext = (new DateTimeImmutable($to))->modify('+1 day')->format('Y-m-d');
 
-/** Agrège les rendez-vous d'un salon sur la période. */
-function stats_for(int $salonId, string $from, string $toNext): array
-{
-    $rows = q('SELECT a.*, s.name AS staff_name, s.color AS staff_color FROM appointments a LEFT JOIN staff s ON s.id = a.staff_id
-               WHERE a.salon_id = ? AND a.start_at >= ? AND a.start_at < ?', [$salonId, "$from 00:00:00", "$toNext 00:00:00"])->fetchAll();
-    $st = ['rows' => $rows, 'total' => 0, 'kept' => 0, 'done' => 0, 'noshow' => 0, 'cancelled' => 0, 'web' => 0, 'revenue' => 0, 'priced' => 0, 'minutes' => 0];
-    foreach ($rows as $r) {
-        $st['total']++;
-        if ($r['status'] === 'cancelled') { $st['cancelled']++; continue; }
-        if ($r['status'] === 'noshow') { $st['noshow']++; continue; }
-        $st['kept']++;
-        if ($r['status'] === 'done') $st['done']++;
-        if ($r['source'] !== 'admin') $st['web']++;
-        $st['minutes'] += (int) $r['duration_min'];
-        if ($r['price_eur'] !== null) { $st['revenue'] += (int) $r['price_eur']; $st['priced']++; }
-    }
-    return $st;
-}
 
 $s = stats_for($salonId, $from, $toNext);
 $pct = fn(int $a, int $b) => $b > 0 ? round($a * 100 / $b) : 0;

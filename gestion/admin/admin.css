@@ -466,3 +466,10 @@ dialog.modal.wide { width: min(920px, calc(100vw - 1.5rem)); max-width: none; }
 .thumb-home { position: absolute; top: 2.1rem; left: .4rem; z-index: 1; padding: .1rem .45rem; border-radius: 999px; background: var(--gold); color: var(--ink); font-size: .68rem; font-weight: 700; }
 .pick-foot { align-items: flex-end; flex-wrap: wrap; justify-content: space-between; }
 .pick-position { flex: 1 1 260px; }
+
+/* Pointage « Venu / Pas venu » (liste des rendez-vous, vue d'ensemble) */
+.attendance { display: inline-flex; gap: .35rem; flex-wrap: wrap; }
+.att { min-height: 36px; padding: .3rem .8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.att:hover:not(:disabled) { border-color: var(--ink); }
+.att-done.is-on { background: #e1efdc; border-color: #9cc48f; color: #2d5a25; cursor: default; }
+.att-noshow.is-on { background: #fbe1df; border-color: #e3a29c; color: #8f2219; cursor: default; }

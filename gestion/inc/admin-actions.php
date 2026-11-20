@@ -154,9 +154,16 @@ function run_admin_action(string $action, array $user, array $salon): void
         case 'appt_status': {
             $status = post('status');
             if (!isset(APPT_STATUSES[$status])) throw new InvalidArgumentException('Statut invalide.');
-            require_owned('appointments', post_int('id'), $salon, 'Rendez-vous');
+            // Le propriétaire pointe depuis la vue d'ensemble les rendez-vous de tous ses salons
+            if ($user['is_owner']) {
+                $appt = q('SELECT client_name FROM appointments WHERE id = ?', [post_int('id')])->fetch();
+                if (!$appt) throw new InvalidArgumentException('Rendez-vous introuvable.');
+            } else {
+                require_owned('appointments', post_int('id'), $salon, 'Rendez-vous');
+                $appt = q('SELECT client_name FROM appointments WHERE id = ?', [post_int('id')])->fetch();
+            }
             q('UPDATE appointments SET status = ? WHERE id = ?', [$status, post_int('id')]);
-            flash('Statut : ' . APPT_STATUSES[$status] . '.');
+            flash("{$appt['client_name']} : " . mb_strtolower(APPT_STATUSES[$status]) . '.');
             break;
         }
 

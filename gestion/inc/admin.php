@@ -8,6 +8,7 @@ require_once __DIR__ . '/booking.php';
 require_once __DIR__ . '/media.php';
 
 const ADMIN_NAV = [
+    'global' => ["Vue d'ensemble", 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z'],
     'agenda' => ['Agenda', 'M3 5h18M3 10h18M7 3v4m10-4v4M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z'],
     'rdv' => ['Rendez-vous', 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01'],
     'clients' => ['Clients', 'M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm11 10v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
@@ -18,12 +19,12 @@ const ADMIN_NAV = [
     'photos' => ['Photos du site', 'M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16m-2-2 1.6-1.6a2 2 0 0 1 2.8 0L20 14M14 8h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z'],
     'medias' => ['Médiathèque', 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm9 3v6m-3-3h6'],
     'salons' => ['Salons', 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6'],
-    'comptes' => ['Accès gérants', 'M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9 13a6 6 0 0 1 12 0M19 8v6m3-3h-6'],
+    'comptes' => ['Comptes des salons', 'M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9 13a6 6 0 0 1 12 0M19 8v6m3-3h-6'],
     'compte' => ['Mon compte', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0'],
 ];
 
 /** Pages réservées au propriétaire. */
-const OWNER_PAGES = ['salons', 'comptes'];
+const OWNER_PAGES = ['global', 'salons', 'comptes'];
 
 function admin_user(): ?array
 {

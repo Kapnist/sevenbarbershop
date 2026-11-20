@@ -95,7 +95,7 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
   });
 
   test("toutes les pages de l'espace gérant s'affichent sans erreur PHP", async () => {
-    for (const p of ["agenda", "rdv", "clients", "stats", "equipe", "planning", "prestations", "salons", "comptes", "compte"]) {
+    for (const p of ["global", "agenda", "rdv", "clients", "stats", "equipe", "planning", "prestations", "salons", "comptes", "compte"]) {
       const { res, text } = await admin.get(`/admin/index.php?p=${p}`);
       assert.equal(res.status, 200, p);
       assert.doesNotMatch(text, PHP_ERRORS, `page ${p}`);
@@ -305,7 +305,7 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.equal(res.status, 409);
   });
 
-  test("espace gérant : rendez-vous au salon, statut « Absent », statistiques et fichier clients", async () => {
+  test("espace gérant : rendez-vous au salon, statut « Pas venu », statistiques et fichier clients", async () => {
     const day = bo.sql("SELECT substr(start_at,1,10) d FROM appointments WHERE status='confirmed' LIMIT 1")[0].d;
     const service = salon.services[0];
     const kamel = salon.staff.find((s) => s.name === "Kamel");
@@ -324,7 +324,7 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     const [appt] = bo.sql("SELECT id FROM appointments WHERE client_name='Client Comptoir'");
 
     const status = await admin.action({ action: "appt_status", status: "noshow", id: String(appt.id) }, "rdv");
-    assert.match(status, /Statut : Absent/);
+    assert.match(status, /: pas venu\./);
 
     const { text: stats } = await admin.get("/admin/index.php?p=stats&period=next7");
     assert.doesNotMatch(stats, PHP_ERRORS);
@@ -363,6 +363,47 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.match(closed, /renvoient vers Planity/);
     ({ salons } = await json(await api("catalog.php")));
     assert.ok(salons.every((s) => !s.booking));
+  });
+
+  test("vue d'ensemble : page d'accueil du propriétaire, pointage « Venu » d'un rendez-vous de n'importe quel salon", async () => {
+    const { text: home } = await admin.get("/admin/index.php");
+    assert.match(home, /<h1>Vue d'ensemble<\/h1>/);
+    for (const name of ["Anatole France", "Jean Jaurès", "Place Chavanelle", "Le Port", "Rue Meyerbeer"]) assert.match(home, new RegExp(name));
+    // Rendez-vous d'un autre salon que le salon affiché
+    const [port] = bo.sql("SELECT id FROM salons WHERE slug = 'le-port'");
+    const [service] = bo.sql("SELECT id, name, duration_min, price_eur FROM services WHERE salon_id = ? LIMIT 1", [port.id]);
+    bo.sql(
+      `INSERT INTO appointments (ref, salon_id, staff_id, client_id, service_id, service_name, price_eur, duration_min, start_at, end_at,
+        client_name, client_phone, client_email, note, admin_note, status, source, created_at)
+       VALUES ('PORT01', ${port.id}, NULL, NULL, ${service.id}, 'Coupe', 20, 30, datetime('now', 'localtime', '-2 hours'), datetime('now', 'localtime', '-90 minutes'),
+        'Client du Port', '0600000000', '', '', '', 'confirmed', 'admin', datetime('now'))`,
+    );
+    const [appt] = bo.sql("SELECT id FROM appointments WHERE ref = 'PORT01'");
+    const done = await admin.action({ action: "appt_status", status: "done", id: String(appt.id) }, "global");
+    assert.match(done, /Client du Port : venu\./);
+    assert.equal(bo.sql("SELECT status FROM appointments WHERE ref = 'PORT01'")[0].status, "done");
+  });
+
+  test("compte de salon : ne voit que son salon, pas la vue d'ensemble ni les autres salons", async () => {
+    const [anatole] = bo.sql("SELECT id FROM salons WHERE slug = 'anatole-france'");
+    const created = await admin.action(
+      { action: "admin_save", name: "Anatole", email: "anatole@example.com", salon_id: String(anatole.id), password: "motdepasse-anatole" },
+      "comptes",
+    );
+    assert.match(created, /enregistré/);
+    bo.sql("DELETE FROM login_attempts");
+    const { ok, session } = await bo.login("anatole@example.com", "motdepasse-anatole");
+    assert.ok(ok, "connexion du compte du salon");
+    const { text: home } = await session.get("/admin/index.php");
+    assert.match(home, /<h1>Mardi|<h1>[A-Z][a-zéû]+ \d+/, "arrive sur l'agenda");
+    assert.doesNotMatch(home, /Vue d'ensemble|Comptes des salons/, "pas de menu propriétaire");
+    const { text: other } = await session.get("/admin/index.php?p=rdv&salon=le-port");
+    assert.match(other, /Rendez-vous · Anatole France/, "reste sur son salon");
+    assert.doesNotMatch(other, /Client du Port/);
+    const [appt] = bo.sql("SELECT id FROM appointments WHERE ref = 'PORT01'");
+    const refused = await session.action({ action: "appt_status", status: "noshow", id: String(appt.id) }, "rdv");
+    assert.match(refused, /introuvable dans ce salon/);
+    assert.equal(bo.sql("SELECT status FROM appointments WHERE ref = 'PORT01'")[0].status, "done");
   });
 
   test("le serveur PHP n'a journalisé aucune erreur", () => {

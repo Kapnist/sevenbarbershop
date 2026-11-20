@@ -9,7 +9,8 @@ require dirname(__DIR__) . '/inc/admin.php';
 
 $user = require_admin();
 $salon = current_salon($user);
-$page = $_GET['p'] ?? 'agenda';
+// Le propriétaire arrive sur la vue d'ensemble de ses salons, un responsable sur l'agenda de son salon
+$page = $_GET['p'] ?? ($user['is_owner'] ? 'global' : 'agenda');
 if (!array_key_exists($page, ADMIN_NAV) || (in_array($page, OWNER_PAGES, true) && !$user['is_owner'])) $page = 'agenda';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

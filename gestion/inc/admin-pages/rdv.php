@@ -23,6 +23,11 @@ switch ($period) {
         $where[] = "a.source <> 'admin' AND a.created_at >= ?";
         $params[] = now()->modify('-7 days')->format('Y-m-d H:i:s');
         break;
+    case 'tocheck':
+        // Rendez-vous passés pas encore pointés « Venu » ou « Pas venu »
+        $where[] = "a.start_at < ? AND a.status = 'confirmed'";
+        $params[] = $nowStr;
+        break;
     case 'all':
         break;
     default:
@@ -60,7 +65,9 @@ if (($_GET['export'] ?? '') === 'csv') {
     exit;
 }
 
-$periods = ['upcoming' => 'À venir', 'today' => "Aujourd'hui", 'new' => 'Nouvelles réservations en ligne', 'past' => 'Passés', 'all' => 'Tous'];
+$toCheck = (int) q("SELECT COUNT(*) FROM appointments WHERE salon_id = ? AND start_at < ? AND status = 'confirmed'", [$salon['id'], $nowStr])->fetchColumn();
+$periods = ['upcoming' => 'À venir', 'today' => "Aujourd'hui", 'tocheck' => 'À pointer' . ($toCheck ? " ($toCheck)" : ''), 'new' => 'Nouvelles réservations en ligne', 'past' => 'Passés', 'all' => 'Tous'];
+$endOfToday = now()->format('Y-m-d') . ' 23:59:59';
 $back = 'index.php?' . http_build_query(['p' => 'rdv', 'period' => $period, 'status' => $status, 'q' => $search]);
 
 admin_header('Rendez-vous', 'rdv', $user, $salon);
@@ -109,7 +116,20 @@ admin_header('Rendez-vous', 'rdv', $user, $salon);
         <small><?= e($r['ref']) ?> · <?= e(mb_strtolower(APPT_SOURCES[$r['source']] ?? $r['source'])) ?></small>
       </div>
       <div class="appt-actions">
-        <span class="pill status-<?= e($r['status']) ?>"><?= e(APPT_STATUSES[$r['status']] ?? $r['status']) ?></span>
+        <?php if ($r['status'] !== 'cancelled' && $r['start_at'] <= $endOfToday): ?>
+          <?php // Pointage en un clic : le client est-il venu ? ?>
+          <div class="attendance" role="group" aria-label="Le client est-il venu ?">
+            <?php foreach (['done' => '✓ Venu', 'noshow' => '✗ Pas venu'] as $st => $label): ?>
+              <form method="post" class="inline">
+                <?= csrf_field() ?><input type="hidden" name="action" value="appt_status"><input type="hidden" name="status" value="<?= $st ?>">
+                <input type="hidden" name="id" value="<?= (int) $r['id'] ?>"><input type="hidden" name="back" value="<?= e($back) ?>">
+                <button type="submit" class="att att-<?= $st ?><?= $r['status'] === $st ? ' is-on' : '' ?>"<?= $r['status'] === $st ? ' aria-pressed="true" disabled' : ' aria-pressed="false"' ?>><?= $label ?></button>
+              </form>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <span class="pill status-<?= e($r['status']) ?>"><?= e(APPT_STATUSES[$r['status']] ?? $r['status']) ?></span>
+        <?php endif; ?>
         <?php if ($r['status'] === 'confirmed'): ?>
           <form method="post" class="inline" data-confirm="Annuler le rendez-vous de <?= e($r['client_name']) ?> ?">
             <?= csrf_field() ?><input type="hidden" name="action" value="appt_status"><input type="hidden" name="status" value="cancelled">
