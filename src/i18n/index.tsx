@@ -42,7 +42,7 @@ function readStoredLanguage(): Language | null {
 /** Robots des moteurs de recherche et des aperçus de liens : ils doivent voir le site en français. */
 const CRAWLER = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|preview|lighthouse/i;
 
-/** Choix mémorisé du visiteur, sinon première langue du navigateur prise en charge. */
+/** Choix mémorisé du visiteur, sinon première langue du navigateur prise en charge, sinon l'anglais. */
 function detectLanguage(): Language {
   if (typeof navigator !== "undefined" && CRAWLER.test(navigator.userAgent)) return "fr";
 
@@ -56,11 +56,13 @@ function detectLanguage(): Language {
         ? navigator.languages
         : [navigator.language];
 
+  // Langues du navigateur, dans l'ordre de préférence du visiteur : la première que le site propose
   for (const tag of preferred) {
     const base = tag?.toLowerCase().split("-")[0];
     if (isLanguage(base)) return base;
   }
-  return "fr";
+  // Aucune langue du visiteur n'est proposée par le site (allemand, portugais…) : anglais par défaut
+  return "en";
 }
 
 interface I18nValue {
