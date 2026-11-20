@@ -251,7 +251,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=14">
+<link rel="stylesheet" href="admin.css?v=15">
 <!-- Icône sur l'écran d'accueil de la tablette : ouvre l'espace gérant en plein écran, comme une application -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#111b18">
