@@ -251,7 +251,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=13">
+<link rel="stylesheet" href="admin.css?v=14">
 <!-- Icône sur l'écran d'accueil de la tablette : ouvre l'espace gérant en plein écran, comme une application -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#111b18">
@@ -293,6 +293,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
         <?php if ($key === 'rdv' && $pending): ?><b class="badge" title="Réservations en ligne des dernières 24 h"><?= $pending ?></b><?php endif; ?>
       </a>
     <?php endforeach; ?>
+    <a class="nav-site" href="../../" target="_blank" rel="noopener"><?= icon('M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5') ?><span>Voir le site</span></a>
   </nav>
   <div class="sidebar-foot">
     <span><?= e($user['name'] ?: $user['email']) ?><small><?= $user['is_owner'] ? 'Propriétaire' : 'Responsable ' . e($salon['name']) ?></small></span>

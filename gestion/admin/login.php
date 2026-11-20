@@ -27,7 +27,7 @@ $brand = setting('brand_name', 'Seven Barbershop');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Connexion — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=13">
+<link rel="stylesheet" href="admin.css?v=14">
 <!-- Icône sur l'écran d'accueil de la tablette : ouvre l'espace gérant en plein écran, comme une application -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#111b18">

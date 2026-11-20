@@ -531,6 +531,17 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.match(text, /Rester connecté sur cet appareil/);
   });
 
+  test("liens vers le site public : menu, photos, horaires et prix du salon", async () => {
+    const { text: planning } = await admin.get("/admin/index.php?p=planning&salon=le-port");
+    assert.match(planning, /class="nav-site" href="\.\.\/\.\.\/"/, "« Voir le site » dans le menu");
+    assert.match(planning, /href="\.\.\/\.\.\/(salons\/le-port|reservation\?salon=le-port)"[^>]*>Voir la page du salon/);
+    const { text: prices } = await admin.get("/admin/index.php?p=prestations");
+    assert.match(prices, /Voir la page du salon/);
+    const { text: photos } = await admin.get("/admin/index.php?p=photos");
+    assert.match(photos, /href="\.\.\/\.\.\/a-propos"[^>]*>Voir sur le site/);
+    assert.match(photos, /href="\.\.\/\.\.\/carrieres"[^>]*>Voir sur le site/);
+  });
+
   test("le serveur PHP n'a journalisé aucune erreur", () => {
     assert.doesNotMatch(bo.log, PHP_ERRORS);
   });

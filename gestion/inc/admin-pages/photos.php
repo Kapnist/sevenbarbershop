@@ -45,9 +45,12 @@ admin_header('Photos du site', 'photos', $user, $salon);
           <h3><?= e($def['label']) ?></h3>
           <p class="muted small"><?= e($def['help']) ?></p>
         </div>
-        <?php if (!$custom): ?><span class="pill">Photo<?= $isGallery ? 's' : '' ?> d'origine</span>
-        <?php elseif ($isGallery): ?><span class="pill ok">Galerie personnalisée · <?= count($current) ?> photo<?= count($current) > 1 ? 's' : '' ?></span>
-        <?php else: ?><span class="pill ok">Photo choisie</span><?php endif; ?>
+        <span class="slot-badges">
+          <?php if (!$custom): ?><span class="pill">Photo<?= $isGallery ? 's' : '' ?> d'origine</span>
+          <?php elseif ($isGallery): ?><span class="pill ok">Galerie personnalisée · <?= count($current) ?> photo<?= count($current) > 1 ? 's' : '' ?></span>
+          <?php else: ?><span class="pill ok">Photo choisie</span><?php endif; ?>
+          <a class="site-link" href="<?= e(slot_site_link($key)) ?>" target="_blank" rel="noopener">Voir sur le site ↗</a>
+        </span>
       </div>
 
       <?php if (!$isGallery): ?>

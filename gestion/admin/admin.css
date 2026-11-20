@@ -486,3 +486,9 @@ td.nowrap .btn { vertical-align: middle; }
 .stats-access-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dashed var(--line); }
 .stats-access-row:last-child { border-bottom: 0; }
 .att.is-on-soft { background: #e1efdc; border-color: #9cc48f; color: #2d5a25; }
+
+/* Liens vers le site public */
+.nav-site { margin-top: .6rem; border-top: 1px solid var(--line); padding-top: .9rem !important; }
+.slot-badges { display: flex; flex-direction: column; align-items: flex-end; gap: .45rem; }
+.site-link { font-size: .82rem; font-weight: 600; white-space: nowrap; }
+@media (max-width: 720px) { .slot-badges { align-items: flex-start; } }

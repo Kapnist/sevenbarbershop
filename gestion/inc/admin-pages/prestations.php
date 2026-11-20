@@ -32,6 +32,7 @@ admin_header('Prestations & prix', 'prestations', $user, $salon);
 ?>
 <div class="page-head">
   <div><h1>Prestations & prix · <?= e($salon['name']) ?></h1><p class="muted">La durée sert à calculer les créneaux libres. Le premier montant du prix sert aux statistiques. Laissez le prix vide pour afficher « Sur devis ».</p></div>
+  <div class="head-actions"><a class="btn ghost" href="<?= e(salon_site_link($salon)) ?>" target="_blank" rel="noopener">Voir la page du salon ↗</a></div>
 </div>
 
 <details class="panel">

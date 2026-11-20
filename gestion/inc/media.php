@@ -116,6 +116,23 @@ function media_slots(): array
 }
 
 /** L'utilisateur peut-il modifier cet emplacement ? (propriétaire : tout ; responsable : son salon) */
+/** Page du site où s'affiche un emplacement de photo (lien « Voir sur le site »). */
+function slot_site_link(string $slot): string
+{
+    $def = media_slots()[$slot] ?? null;
+    if ($def && $def['salon'] !== null) {
+        $salon = salon_by_slug($def['salon']);
+        if ($salon) return salon_site_link($salon);
+    }
+    $prefix = explode('.', $slot)[0];
+    return SITE_FROM_ADMIN . match ($prefix) {
+        'salon' => 'salon',
+        'about' => 'a-propos',
+        'careers' => 'carrieres',
+        default => '',
+    };
+}
+
 function can_edit_slot(array $user, string $slot): bool
 {
     $def = media_slots()[$slot] ?? null;

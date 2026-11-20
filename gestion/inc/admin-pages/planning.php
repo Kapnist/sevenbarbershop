@@ -15,6 +15,7 @@ admin_header('Horaires & réservation', 'planning', $user, $salon);
 ?>
 <div class="page-head">
   <div><h1>Horaires & réservation · <?= e($salon['name']) ?></h1><p class="muted">Ouvrez la réservation en ligne de ce salon, réglez ses horaires et ses fermetures.</p></div>
+  <div class="head-actions"><a class="btn ghost" href="<?= e(salon_site_link($salon)) ?>" target="_blank" rel="noopener">Voir la page du salon ↗</a></div>
 </div>
 
 <section class="panel highlight">

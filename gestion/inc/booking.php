@@ -57,6 +57,20 @@ function can_see_stats(array $user): bool
     return $user['is_owner'] || !in_array((int) $user['salon_id'], stats_blocked_ids(), true);
 }
 
+/* ---------- Liens vers le site public (depuis /gestion/admin/) ---------- */
+
+const SITE_FROM_ADMIN = '../../';
+
+/**
+ * Page publique d'un salon : sa page vitrine (/salons/<slug>) si elle existe sur l'hébergement,
+ * sinon sa réservation en ligne (un salon ajouté dans l'espace gérant n'a pas encore de page vitrine).
+ */
+function salon_site_link(array $salon): string
+{
+    $page = dirname(ROOT) . '/salons/' . $salon['slug'] . '.html';
+    return SITE_FROM_ADMIN . (is_file($page) ? 'salons/' . $salon['slug'] : 'reservation?salon=' . rawurlencode($salon['slug']));
+}
+
 /* ---------- Horaires ---------- */
 
 function weekly_hours(int $salonId): array
