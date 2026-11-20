@@ -384,6 +384,19 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     assert.equal(bo.sql("SELECT status FROM appointments WHERE ref = 'PORT01'")[0].status, "done");
   });
 
+  test("vue d'ensemble : le propriétaire masque puis réaffiche les statistiques d'un salon", async () => {
+    const [port] = bo.sql("SELECT id FROM salons WHERE slug = 'le-port'");
+    const hidden = await admin.action({ action: "overview_toggle", id: String(port.id), show: "0" }, "global");
+    assert.match(hidden, /Le Port sont masquées/);
+    assert.match(hidden, /Salons masqués :/);
+    assert.doesNotMatch(hidden, /Client du Port/, "ses rendez-vous du jour ne sont plus listés");
+    assert.match(hidden, /4 sur 5 affichés/);
+    const shown = await admin.action({ action: "overview_toggle", id: String(port.id), show: "1" }, "global");
+    assert.match(shown, /Le Port s(&#039;|')affichent/);
+    assert.doesNotMatch(shown, /Salons masqués :/);
+    assert.match(shown, /Client du Port/);
+  });
+
   test("compte de salon : ne voit que son salon, pas la vue d'ensemble ni les autres salons", async () => {
     const [anatole] = bo.sql("SELECT id FROM salons WHERE slug = 'anatole-france'");
     const created = await admin.action(

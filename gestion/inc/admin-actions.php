@@ -405,6 +405,18 @@ function run_admin_action(string $action, array $user, array $salon): void
             break;
         }
 
+        case 'overview_toggle': {
+            if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
+            $s = salon_by_id(post_int('id'));
+            if (!$s) throw new InvalidArgumentException('Salon introuvable.');
+            $hidden = overview_hidden_ids();
+            $show = post('show') === '1';
+            $hidden = $show ? array_values(array_diff($hidden, [(int) $s['id']])) : array_values(array_unique([...$hidden, (int) $s['id']]));
+            setting_set('overview_hidden', implode(',', $hidden));
+            flash($show ? "Les statistiques de {$s['name']} s'affichent dans la vue d'ensemble." : "Les statistiques de {$s['name']} sont masquées de la vue d'ensemble.");
+            break;
+        }
+
         case 'salon_move': {
             if (!$user['is_owner']) throw new InvalidArgumentException('Réservé au propriétaire.');
             $rows = array_map(fn($s) => (int) $s['id'], salons_list());

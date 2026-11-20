@@ -19,9 +19,24 @@ $back = admin_url('global', ['period' => $period]);
 $pct = fn(int $a, int $b) => $b > 0 ? round($a * 100 / $b) : 0;
 $eur = fn(int $v) => number_format($v, 0, ',', ' ') . ' €';
 
+// Salons dont le propriétaire a choisi de ne pas afficher les statistiques
+$hiddenIds = overview_hidden_ids();
+$hiddenSalons = array_values(array_filter(salons_list(), fn($s) => in_array((int) $s['id'], $hiddenIds, true)));
+$shownSalons = array_values(array_filter(salons_list(), fn($s) => !in_array((int) $s['id'], $hiddenIds, true)));
+
+/** Interrupteur « afficher / masquer » d'un salon dans la vue d'ensemble. */
+$toggle = function (array $sl, bool $show, string $back): string {
+    $label = $show ? 'Afficher' : 'Masquer';
+    $title = $show ? "Afficher les statistiques de {$sl['name']}" : "Masquer les statistiques de {$sl['name']}";
+    return '<form method="post" class="inline">' . csrf_field()
+        . '<input type="hidden" name="action" value="overview_toggle"><input type="hidden" name="id" value="' . (int) $sl['id'] . '">'
+        . '<input type="hidden" name="show" value="' . ($show ? '1' : '0') . '"><input type="hidden" name="back" value="' . e($back) . '">'
+        . '<button class="link' . ($show ? '' : ' muted') . '" type="submit" title="' . e($title) . '" aria-label="' . e($title) . '">' . $label . '</button></form>';
+};
+
 $rows = [];
 $total = ['kept' => 0, 'done' => 0, 'noshow' => 0, 'cancelled' => 0, 'revenue' => 0, 'web' => 0, 'tocheck' => 0];
-foreach (salons_list() as $sl) {
+foreach ($shownSalons as $sl) {
     $st = stats_for((int) $sl['id'], $from, $toNext);
     $st['tocheck'] = (int) q("SELECT COUNT(*) FROM appointments WHERE salon_id = ? AND start_at < ? AND status = 'confirmed'", [$sl['id'], $nowStr])->fetchColumn();
     $st['upcoming'] = (int) q("SELECT COUNT(*) FROM appointments WHERE salon_id = ? AND start_at >= ? AND start_at < ? AND status = 'confirmed'", [$sl['id'], $nowStr, "$toNext 00:00:00"])->fetchColumn();
@@ -33,11 +48,12 @@ foreach (salons_list() as $sl) {
 $todayAppts = q("SELECT a.*, s.name AS staff_name, s.color AS staff_color, sa.name AS salon_name, sa.slug AS salon_slug
     FROM appointments a LEFT JOIN staff s ON s.id = a.staff_id JOIN salons sa ON sa.id = a.salon_id
     WHERE a.start_at >= ? AND a.start_at < ? AND a.status <> 'cancelled' ORDER BY sa.sort, a.start_at", ["$today 00:00:00", "$toNext 00:00:00"])->fetchAll();
+$todayAppts = array_values(array_filter($todayAppts, fn($r) => !in_array((int) $r['salon_id'], $hiddenIds, true)));
 
 admin_header("Vue d'ensemble", 'global', $user, $salon);
 ?>
 <div class="page-head">
-  <div><h1>Vue d'ensemble</h1><p class="muted">Tous vos salons d'un coup d'œil. Chaque responsable de salon ne voit que le sien.</p></div>
+  <div><h1>Vue d'ensemble</h1><p class="muted">Tous vos salons d'un coup d'œil. Chaque responsable de salon ne voit que le sien. « Masquer » retire un salon des chiffres et de la liste du jour, sans rien supprimer.</p></div>
 </div>
 
 <nav class="chips" aria-label="Période">
@@ -54,7 +70,7 @@ admin_header("Vue d'ensemble", 'global', $user, $salon);
 </div>
 
 <section class="panel">
-  <h2>Par salon · <?= e(mb_strtolower($periods[$period])) ?></h2>
+  <h2>Par salon · <?= e(mb_strtolower($periods[$period])) ?><?= $hiddenSalons ? ' <span class="muted small">(' . count($shownSalons) . ' sur ' . count(salons_list()) . ' affichés)</span>' : '' ?></h2>
   <div class="table-wrap"><table class="table">
     <thead><tr><th>Salon</th><th class="num">RDV</th><th class="num">Venus</th><th class="num">Pas venus</th><th class="num">À pointer</th><th class="num">Annulés</th><th class="num">CA estimé</th><th></th></tr></thead>
     <tbody>
@@ -68,11 +84,21 @@ admin_header("Vue d'ensemble", 'global', $user, $salon);
         <td class="num"><?php if ($st['tocheck']): ?><a href="<?= e(admin_url('rdv', ['period' => 'tocheck', 'salon' => $sl['slug']])) ?>"><b><?= $st['tocheck'] ?></b></a><?php else: ?>0<?php endif; ?></td>
         <td class="num"><?= $st['cancelled'] ?></td>
         <td class="num"><?= e($eur($st['revenue'])) ?></td>
-        <td class="right"><a class="btn ghost small" href="<?= e(admin_url('agenda', ['salon' => $sl['slug']])) ?>">Agenda</a></td>
+        <td class="right nowrap"><a class="btn ghost small" href="<?= e(admin_url('agenda', ['salon' => $sl['slug']])) ?>">Agenda</a> <?= $toggle($sl, false, $back) ?></td>
       </tr>
     <?php endforeach; ?>
+    <?php if (!$rows): ?>
+      <tr><td colspan="8" class="muted">Tous les salons sont masqués.</td></tr>
+    <?php endif; ?>
     </tbody>
   </table></div>
+  <?php if ($hiddenSalons): ?>
+    <p class="hidden-salons muted small">Salons masqués :
+      <?php foreach ($hiddenSalons as $i => $sl): ?>
+        <span class="nowrap"><?= $i ? ' · ' : '' ?><b><?= e($sl['name']) ?></b> <?= $toggle($sl, true, $back) ?></span>
+      <?php endforeach; ?>
+    </p>
+  <?php endif; ?>
 </section>
 
 <section class="panel">

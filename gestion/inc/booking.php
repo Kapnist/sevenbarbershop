@@ -39,6 +39,12 @@ function salon_by_slug(string $slug): ?array
     return null;
 }
 
+/** Salons dont le propriétaire a masqué les statistiques dans la vue d'ensemble. */
+function overview_hidden_ids(): array
+{
+    return array_values(array_filter(array_map('intval', explode(',', (string) setting('overview_hidden', '')))));
+}
+
 /* ---------- Horaires ---------- */
 
 function weekly_hours(int $salonId): array

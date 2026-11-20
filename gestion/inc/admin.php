@@ -149,7 +149,7 @@ function admin_header(string $title, string $active, array $user, array $salon):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · <?= e($salon['name']) ?> — <?= e($brand) ?></title>
-<link rel="stylesheet" href="admin.css?v=10">
+<link rel="stylesheet" href="admin.css?v=11">
 </head>
 <body class="admin">
 <header class="topbar">

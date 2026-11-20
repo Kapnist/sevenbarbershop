@@ -473,3 +473,10 @@ dialog.modal.wide { width: min(920px, calc(100vw - 1.5rem)); max-width: none; }
 .att:hover:not(:disabled) { border-color: var(--ink); }
 .att-done.is-on { background: #e1efdc; border-color: #9cc48f; color: #2d5a25; cursor: default; }
 .att-noshow.is-on { background: #fbe1df; border-color: #e3a29c; color: #8f2219; cursor: default; }
+
+/* Vue d'ensemble : afficher / masquer un salon */
+.nowrap { white-space: nowrap; }
+.hidden-salons { margin-top: .9rem; line-height: 2; }
+.hidden-salons .link, td .link.muted { font-weight: 600; }
+.nowrap form.inline { display: inline-block; margin-left: .7rem; vertical-align: middle; }
+td.nowrap .btn { vertical-align: middle; }
