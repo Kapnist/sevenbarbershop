@@ -2443,13 +2443,23 @@ html:has(.lightbox[open]) {
     padding: 14px 0;
   }
 
+  /* Sur téléphone aussi, la photo reste à côté de la description */
+  .location-card:has(.location-photo) {
+    grid-template-columns: 108px 1fr;
+    align-items: start;
+    column-gap: 14px;
+  }
+
+  .location-card:has(.location-photo) .location-index {
+    display: none;
+  }
+
   .location-photo {
-    grid-column: 1 / -1;
-    order: -1;
+    grid-row: span 2;
   }
 
   .location-photo img {
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 5;
   }
 
   .location-card h3 {
