@@ -109,6 +109,9 @@ admin_header('Agenda', 'agenda', $user, $salon);
             <?php else:
               if ($win[0] > $gStart): ?><div class="off" style="top:0;height:<?= $px($win[0]) ?>px"></div><?php endif;
               if ($win[1] < $gEnd): ?><div class="off" style="top:<?= $px($win[1]) ?>px;height:<?= round(($gEnd - $win[1]) * $ppm, 1) ?>px"></div><?php endif;
+              // Pause du barbier
+              $pause = staff_break((int) $c['id'], $date);
+              if ($pause): ?><div class="off" style="top:<?= $px($pause[0]) ?>px;height:<?= round(($pause[1] - $pause[0]) * $ppm, 1) ?>px"><span>Pause</span></div><?php endif;
               if ($schedule && $schedule['break_start'] && $schedule['break_end']): ?>
                 <div class="off" style="top:<?= $px(to_min($schedule['break_start'])) ?>px;height:<?= round((to_min($schedule['break_end']) - to_min($schedule['break_start'])) * $ppm, 1) ?>px"><span>Pause</span></div>
               <?php endif;

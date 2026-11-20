@@ -152,7 +152,7 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
     await page.locator(".booking-services .booking-option").first().click();
 
     await page.getByRole("button", { name: /Sans préférence/ }).click();
-    await page.locator(".booking-day:not([disabled])").first().click();
+    await page.locator(".calendar-day.is-open").first().click();
     await page.locator(".booking-slot").first().waitFor();
     assert.equal(await overflow(page), 0, "étape heure");
     await shot(page, "mobile-reservation-heures");
@@ -221,7 +221,7 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
     await page.goto(`${base}/reservation?salon=meyerbeer`);
     await page.locator(".booking-services .booking-option").first().click();
     await page.getByRole("button", { name: /Sans préférence/ }).click();
-    await page.locator(".booking-day:not([disabled])").first().click();
+    await page.locator(".calendar-day.is-open").first().click();
     await page.locator(".booking-slot").first().waitFor();
     await context.close();
   });
@@ -276,7 +276,7 @@ describe("Site et espace gérant dans Chrome", { skip }, () => {
       await page.goto(`${base}/reservation?salon=anatole-france`);
       await page.locator(".booking-services .booking-option").first().click();
       await page.getByRole("button", { name: /Sans préférence/ }).click();
-      await page.locator(".booking-day:not([disabled])").first().click();
+      await page.locator(".calendar-day.is-open").first().click();
       await page.locator(".booking-slot").first().waitFor();
       assert.equal(await overflow(page), 0, name);
       // Les créneaux restent des cibles tactiles confortables (44 px de haut au minimum).

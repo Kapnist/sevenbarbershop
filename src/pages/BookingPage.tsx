@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import MonthCalendar from "../components/MonthCalendar";
 import PageIntro from "../components/PageIntro";
 import { MAX_LENGTH, PHONE_PATTERN } from "../components/useFormSubmit";
 import {
@@ -484,26 +485,12 @@ function BookingPage() {
                 <p className="booking-message">{page.noDays}</p>
               )}
               {days && days.some((d) => d.slots > 0) && (
-                <ul className="booking-days">
-                  {days.map((d) => {
-                    const day = asDate(d.date);
-                    return (
-                      <li key={d.date}>
-                        <button
-                          type="button"
-                          className="booking-day"
-                          disabled={d.slots === 0}
-                          onClick={() => chooseDate(d.date)}
-                          aria-label={dayFormat.full.format(day)}
-                        >
-                          <span>{dayFormat.weekday.format(day)}</span>
-                          <b>{dayFormat.day.format(day)}</b>
-                          <span>{dayFormat.month.format(day)}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <MonthCalendar
+                  days={days}
+                  locale={locale}
+                  onSelect={chooseDate}
+                  labels={{ previous: page.prevMonth, next: page.nextMonth }}
+                />
               )}
             </div>
           )}

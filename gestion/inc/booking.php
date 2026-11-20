@@ -115,10 +115,28 @@ function staff_list(int $salonId, bool $onlyBookable = false): array
     return q('SELECT * FROM staff WHERE salon_id = ? AND active = 1' . ($onlyBookable ? ' AND bookable = 1' : '') . ' ORDER BY sort, id', [$salonId])->fetchAll();
 }
 
+/**
+ * Installations faites avant la pause par barbier : ajoute les colonnes break_start / break_end
+ * à staff_hours (une seule fois, à la première lecture du planning).
+ */
+function ensure_staff_breaks(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        db()->query('SELECT break_start, break_end FROM staff_hours LIMIT 1');
+    } catch (PDOException) {
+        db()->exec('ALTER TABLE staff_hours ADD COLUMN break_start VARCHAR(5) NULL');
+        db()->exec('ALTER TABLE staff_hours ADD COLUMN break_end VARCHAR(5) NULL');
+    }
+}
+
 function staff_hours_map(): array
 {
     static $map = null;
     if ($map === null) {
+        ensure_staff_breaks();
         $map = [];
         foreach (q('SELECT * FROM staff_hours')->fetchAll() as $r) $map[(int) $r['staff_id']][(int) $r['weekday']] = $r;
     }
@@ -138,7 +156,18 @@ function staff_window(int $salonId, int $staffId, string $date): ?array
     return $end > $start ? [$start, $end] : null;
 }
 
-/** Intervalles occupés (rendez-vous, blocages, pause) d'un barbier à une date, en minutes. */
+/** Pause du barbier ce jour-là (en minutes), ou null. */
+function staff_break(int $staffId, string $date): ?array
+{
+    $w = (int) (new DateTimeImmutable($date))->format('w');
+    $h = staff_hours_map()[$staffId][$w] ?? null;
+    if (!$h || empty($h['break_start']) || empty($h['break_end'])) return null;
+    $s = to_min($h['break_start']);
+    $e = to_min($h['break_end']);
+    return $e > $s ? [$s, $e] : null;
+}
+
+/** Intervalles occupés (rendez-vous, blocages, pauses du salon et du barbier) d'un barbier à une date, en minutes. */
 function staff_busy(int $salonId, int $staffId, string $date, ?int $ignoreAppointmentId = null): array
 {
     $dayStart = $date . ' 00:00:00';
@@ -158,6 +187,8 @@ function staff_busy(int $salonId, int $staffId, string $date, ?int $ignoreAppoin
     foreach ($blocks as $r) $busy[] = $clip($r['start_at'], $r['end_at']);
     $sch = day_schedule($salonId, $date);
     if ($sch && $sch['break_start'] && $sch['break_end']) $busy[] = [to_min($sch['break_start']), to_min($sch['break_end'])];
+    $pause = staff_break($staffId, $date);
+    if ($pause) $busy[] = $pause;
     return $busy;
 }
 

@@ -33,6 +33,8 @@ export const ar: Dictionary = {
       details: "بياناتك",
     },
     summary: "موعدك",
+    prevMonth: "الشهر السابق",
+    nextMonth: "الشهر التالي",
     change: "تعديل",
     anyStaff: "بدون تفضيل",
     anyStaffHint: "أول حلاق متاح",

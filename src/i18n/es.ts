@@ -33,6 +33,8 @@ export const es: Dictionary = {
       details: "Tus datos",
     },
     summary: "Tu cita",
+    prevMonth: "Mes anterior",
+    nextMonth: "Mes siguiente",
     change: "Cambiar",
     anyStaff: "Sin preferencia",
     anyStaffHint: "El primer barbero disponible",

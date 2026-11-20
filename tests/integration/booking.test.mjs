@@ -146,6 +146,47 @@ describe("Back-office de réservation (PHP)", { skip: !phpAvailable() && "PHP in
     }
   });
 
+  test("pause d'un barbier : refusée si incohérente, puis plus aucun créneau pendant la pause", async () => {
+    const service = salon.services.find((s) => s.duration === 30) ?? salon.services[0];
+    const barber = salon.staff[0];
+    const { date } = await firstFreeDay(service.id, barber.id);
+    const weekday = new Date(`${date}T12:00:00`).getDay();
+    // Planning de la semaine : 9h-19h, pause de 12h à 13h le jour testé
+    const week = (pause) => {
+      const fields = { action: "staff_save", id: String(barber.id), name: barber.name, color: "#c8a96e", bookable: "1" };
+      for (let d = 0; d <= 6; d++) {
+        if (d !== 0) fields[`working[${d}]`] = "on";
+        fields[`start_time[${d}]`] = "09:00";
+        fields[`end_time[${d}]`] = "19:00";
+        fields[`break_start[${d}]`] = d === weekday ? pause[0] : "";
+        fields[`break_end[${d}]`] = d === weekday ? pause[1] : "";
+      }
+      return fields;
+    };
+    const wrong = await admin.action(week(["13:00", "12:00"]), "equipe");
+    assert.match(wrong, /la fin doit être après le début/);
+    const outside = await admin.action(week(["19:30", "20:00"]), "equipe");
+    assert.match(outside, /comprise dans ses horaires/);
+
+    const saved = await admin.action(week(["12:00", "13:00"]), "equipe");
+    assert.match(saved, /Planning de .* enregistré/);
+    const row = bo.sql(`SELECT break_start, break_end FROM staff_hours WHERE staff_id = ${barber.id} AND weekday = ${weekday}`)[0];
+    assert.deepEqual([row.break_start, row.break_end], ["12:00", "13:00"]);
+
+    const { slots } = await json(await api(`slots.php?salon=anatole-france&service=${service.id}&staff=${barber.id}&date=${date}`));
+    const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+    for (const t of slots) {
+      const start = toMin(t);
+      assert.ok(start + service.duration <= 12 * 60 || start >= 13 * 60, `${t} chevauche la pause`);
+    }
+    const { text } = await admin.get(`/admin/index.php?p=agenda&d=${date}`);
+    assert.match(text, /<span>Pause<\/span>/, "pause visible dans l'agenda");
+
+    // Retour au planning sans pause pour les tests suivants
+    await admin.action(week(["", ""]), "equipe");
+    assert.equal(bo.sql(`SELECT break_start FROM staff_hours WHERE staff_id = ${barber.id} AND weekday = ${weekday}`)[0].break_start, null);
+  });
+
   test("réservation refusée si les coordonnées sont invalides (422)", async () => {
     const service = salon.services[0];
     const { date, slots } = await firstFreeDay(service.id);

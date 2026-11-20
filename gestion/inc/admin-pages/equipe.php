@@ -29,12 +29,19 @@ function staff_form(?array $s, array $hours, array $palette, string $back, array
         </div>
       </div>
       <label class="switch"><input type="checkbox" name="bookable" <?= !$s || (int) $s['bookable'] ? 'checked' : '' ?>><span></span> Les clients peuvent le choisir en ligne</label>
+      <p class="muted small">Horaires de travail et pause de chaque jour. Laissez la pause vide les jours sans pause : pendant la pause, aucun client ne peut réserver avec ce barbier.</p>
       <div class="hours-table compact">
         <?php foreach ([1, 2, 3, 4, 5, 6, 0] as $d): $h = $hours[$d] ?? $defaults[$d] ?? ['is_working' => 0, 'start_time' => '09:00', 'end_time' => '19:00']; ?>
           <div class="hours-row<?= (int) $h['is_working'] ? '' : ' is-off' ?>" data-hours-row>
             <label class="check"><input type="checkbox" name="working[<?= $d ?>]" <?= (int) $h['is_working'] ? 'checked' : '' ?>> <?= WEEKDAYS[$d] ?></label>
             <input type="time" name="start_time[<?= $d ?>]" value="<?= e($h['start_time']) ?>" aria-label="Début <?= WEEKDAYS[$d] ?>">
             <input type="time" name="end_time[<?= $d ?>]" value="<?= e($h['end_time']) ?>" aria-label="Fin <?= WEEKDAYS[$d] ?>">
+            <span class="pause">
+              <span class="pause-label">Pause</span>
+              <input type="time" name="break_start[<?= $d ?>]" value="<?= e($h['break_start'] ?? '') ?>" aria-label="Début de pause <?= WEEKDAYS[$d] ?>">
+              <span aria-hidden="true">–</span>
+              <input type="time" name="break_end[<?= $d ?>]" value="<?= e($h['break_end'] ?? '') ?>" aria-label="Fin de pause <?= WEEKDAYS[$d] ?>">
+            </span>
           </div>
         <?php endforeach; ?>
       </div>

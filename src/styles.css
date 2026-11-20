@@ -2537,7 +2537,6 @@ html:has(.lightbox[open]) {
 }
 
 .booking-options,
-.booking-days,
 .booking-slots {
   display: grid;
   gap: 10px;
@@ -2619,51 +2618,11 @@ html:has(.lightbox[open]) {
   font-weight: 700;
 }
 
-.booking-days {
-  grid-auto-columns: 74px;
-  grid-auto-flow: column;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  scroll-snap-type: x proximity;
-}
 
-.booking-day {
-  display: flex;
-  width: 74px;
-  min-height: 92px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  border: 1px solid var(--line);
-  background: var(--green-light);
-  color: var(--cream);
-  font: inherit;
-  cursor: pointer;
-  scroll-snap-align: start;
-}
 
-.booking-day span {
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: capitalize;
-}
 
-.booking-day b {
-  font-family: var(--serif);
-  font-size: 1.55rem;
-  font-weight: 400;
-}
 
-.booking-day:hover:not(:disabled),
-.booking-day:focus-visible {
-  border-color: var(--gold);
-}
 
-.booking-day:disabled {
-  opacity: 0.32;
-  cursor: not-allowed;
-}
 
 .booking-slots {
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
@@ -2826,8 +2785,6 @@ html:has(.lightbox[open]) {
   .booking-step{padding-top:26px}
   .booking-options,.booking-staff{grid-template-columns:1fr}
   .booking-slots{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
-  .booking-day{width:64px;min-height:84px}
-  .booking-days{grid-auto-columns:64px}
   .booking-confirmation-actions .button{width:100%;justify-content:center}
 }
 
@@ -2916,4 +2873,148 @@ html:has(.lightbox[open]) {
   .site-header .nav.wrap { width: calc(100% - 20px); gap: 6px; }
   .brand-logo { width: 74px; height: 38px; }
   .language-switcher select { max-width: 68px; }
+}
+
+/* Calendrier du mois (choix du jour de réservation) */
+.calendar {
+  max-width: 460px;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.calendar-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+.calendar-nav {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--cream);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.calendar-nav:hover:not(:disabled),
+.calendar-nav:focus-visible {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.calendar-nav:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+[dir="rtl"] .calendar-nav span {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.calendar-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 5px;
+  table-layout: fixed;
+}
+
+.calendar-grid th {
+  padding-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.calendar-grid td {
+  padding: 0;
+}
+
+.calendar-day {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.calendar-day:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-open {
+  border-color: var(--line);
+  background: var(--green-light);
+  color: var(--cream);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Point doré : il reste des créneaux ce jour-là */
+.calendar-day.is-open::after {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.calendar-day.is-open:hover,
+.calendar-day.is-open:focus-visible {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--green);
+}
+
+.calendar-day.is-open:hover::after,
+.calendar-day.is-open:focus-visible::after {
+  background: var(--green);
+}
+
+.calendar-day.is-today {
+  outline: 1px dashed rgba(200, 169, 110, 0.6);
+  outline-offset: -4px;
+}
+
+.calendar-next-hint {
+  margin-top: 14px;
+  padding-bottom: 3px;
+  border: 0;
+  border-bottom: 1px solid var(--gold);
+  background: none;
+  color: var(--cream);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+@media (max-width: 420px) {
+  .calendar-grid {
+    border-spacing: 3px;
+  }
+
+  .calendar-day {
+    font-size: 0.88rem;
+  }
 }

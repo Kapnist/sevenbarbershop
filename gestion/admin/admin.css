@@ -69,6 +69,8 @@ legend { font-weight: 600; margin-bottom: .5rem; }
 .pill { display: inline-flex; align-items: center; padding: .15rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #efe7dd; color: var(--ink-soft); white-space: nowrap; }
 .pill.ok { background: #e1efdc; color: #2d5a25; }
 .pill.warn { background: #fbe6d4; color: #8a3f10; }
+/* Sur petit écran, une étiquette longue (« Ouverte jusqu'au dimanche 20 décembre 2026 ») passe à la ligne */
+@media (max-width: 480px) { .pill { white-space: normal; max-width: 100%; } }
 .pill.status-confirmed { background: #e8eef9; color: #234b8c; }
 .pill.status-done { background: #e1efdc; color: #2d5a25; }
 .pill.status-noshow { background: #fbe6d4; color: #8a3f10; }
@@ -140,7 +142,14 @@ details.panel[open] > summary { margin-bottom: 1rem; }
 
 .hours-table { display: grid; gap: .4rem; margin-bottom: 1rem; }
 .hours-row { display: grid; grid-template-columns: 150px 135px 135px 1fr; gap: .6rem; align-items: center; }
-.hours-table.compact .hours-row { grid-template-columns: 150px 135px 135px; }
+/* Planning d'un barbier : jour, début, fin, puis la pause sur une seconde ligne sous les horaires */
+.hours-table.compact .hours-row { grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1fr); row-gap: .35rem; padding-bottom: .55rem; border-bottom: 1px dashed var(--line); }
+.hours-table.compact .hours-row:last-child { border-bottom: 0; }
+.hours-table.compact input[type="time"] { width: 100%; min-width: 0; }
+.hours-row .pause { display: flex; align-items: center; gap: .4rem; grid-column: 2 / -1; }
+.hours-row .pause input { flex: 1; min-width: 0; }
+.hours-row.is-off .pause { opacity: .35; }
+.pause-label { font-size: .8rem; font-weight: 600; color: var(--ink-soft); }
 .hours-row.head { font-size: .8rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; }
 .hours-row.is-off input[type="time"] { opacity: .35; }
 .pair { display: flex; align-items: center; gap: .4rem; }
@@ -149,6 +158,7 @@ details.panel[open] > summary { margin-bottom: 1rem; }
   .hours-row, .hours-table.compact .hours-row { grid-template-columns: 1fr 1fr; }
   .hours-row .check { grid-column: 1 / -1; }
   .hours-row .pair { grid-column: 1 / -1; }
+  .hours-row .pause { grid-column: 1 / -1; }
   .hours-row.head { display: none; }
 }
 

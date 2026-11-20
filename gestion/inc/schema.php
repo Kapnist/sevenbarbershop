@@ -89,6 +89,8 @@ function schema_sql(string $driver): array
             is_working TINYINT NOT NULL DEFAULT 1,
             start_time VARCHAR(5) NOT NULL DEFAULT '09:00',
             end_time VARCHAR(5) NOT NULL DEFAULT '19:00',
+            break_start VARCHAR(5) NULL,
+            break_end VARCHAR(5) NULL,
             PRIMARY KEY (staff_id, weekday)
         )$tail",
         // staff_id NULL : tout le salon est bloqué

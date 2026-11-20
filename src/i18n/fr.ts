@@ -32,6 +32,8 @@ export const fr = {
       details: "Vos coordonnées",
     },
     summary: "Votre rendez-vous",
+    prevMonth: "Mois précédent",
+    nextMonth: "Mois suivant",
     change: "Modifier",
     anyStaff: "Sans préférence",
     anyStaffHint: "Le premier barbier disponible",

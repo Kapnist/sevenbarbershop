@@ -269,14 +269,35 @@ function run_admin_action(string $action, array $user, array $salon): void
                 q('INSERT INTO staff (salon_id, name, color, bookable, active, sort) VALUES (?, ?, ?, ?, 1, ?)', [$salonId, $name, $color, $bookable, $sort]);
                 $id = (int) db()->lastInsertId();
             }
+            ensure_staff_breaks();
+            // Vérifie toute la semaine avant d'écrire, pour ne pas enregistrer un planning à moitié
+            $week = [];
             for ($d = 0; $d <= 6; $d++) {
                 $working = isset($_POST['working'][$d]) ? 1 : 0;
                 $s = substr((string) ($_POST['start_time'][$d] ?? '09:00'), 0, 5);
                 $e = substr((string) ($_POST['end_time'][$d] ?? '19:00'), 0, 5);
                 if (!valid_time($s)) $s = '09:00';
                 if (!valid_time($e) || $e <= $s) $e = '19:00';
+                // Pause facultative : les deux heures, ou aucune
+                $bs = substr((string) ($_POST['break_start'][$d] ?? ''), 0, 5);
+                $be = substr((string) ($_POST['break_end'][$d] ?? ''), 0, 5);
+                if ($bs === '' && $be === '') {
+                    $bs = $be = null;
+                } elseif ($working) {
+                    $day = mb_strtolower(WEEKDAYS[$d]);
+                    if (!valid_time($bs) || !valid_time($be)) throw new InvalidArgumentException("Pause du $day : indiquez l'heure de début et l'heure de fin, ou laissez les deux vides.");
+                    if ($be <= $bs) throw new InvalidArgumentException("Pause du $day : la fin doit être après le début.");
+                    if ($bs < $s || $be > $e) throw new InvalidArgumentException("Pause du $day : elle doit être comprise dans ses horaires ($s – $e).");
+                } else {
+                    $bs = valid_time($bs) ? $bs : null;
+                    $be = valid_time($be) && $bs !== null && $be > $bs ? $be : null;
+                    if ($be === null) $bs = null;
+                }
+                $week[$d] = [$working, $s, $e, $bs, $be];
+            }
+            foreach ($week as $d => [$working, $s, $e, $bs, $be]) {
                 q('DELETE FROM staff_hours WHERE staff_id = ? AND weekday = ?', [$id, $d]);
-                q('INSERT INTO staff_hours (staff_id, weekday, is_working, start_time, end_time) VALUES (?, ?, ?, ?, ?)', [$id, $d, $working, $s, $e]);
+                q('INSERT INTO staff_hours (staff_id, weekday, is_working, start_time, end_time, break_start, break_end) VALUES (?, ?, ?, ?, ?, ?, ?)', [$id, $d, $working, $s, $e, $bs, $be]);
             }
             flash("Planning de $name enregistré.");
             break;

@@ -33,6 +33,8 @@ export const en: Dictionary = {
       details: "Your details",
     },
     summary: "Your appointment",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
     change: "Change",
     anyStaff: "No preference",
     anyStaffHint: "The first available barber",
